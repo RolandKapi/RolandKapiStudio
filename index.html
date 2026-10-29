@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Roland Kapi Studio — A/B Reference</title>
+  <meta name="description" content="Professional studio reference player for comparing Master and Rough mixes with synchronized A/B switching and waveform display." />
+  <meta property="og:title" content="Roland Kapi Studio — A/B Reference" />
+  <meta property="og:description" content="Professional studio reference player for comparing Master and Rough mixes with synchronized A/B switching and waveform display." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+            mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', '"Liberation Mono"', '"Courier New"', 'monospace'],
+          },
+          colors: {
+            studio: {
+              950: '#090b0e',
+              900: '#0e1217',
+              850: '#131820',
+              800: '#181f2a',
+              750: '#1e2634',
+              700: '#263042',
+              600: '#344158',
+              500: '#4c5d7a',
+              400: '#7588a8',
+              300: '#a3b4cc',
+              200: '#d0dae7',
+            },
+            accent: {
+              cyan: '#00f0ff',
+              emerald: '#10b981',
+              amber: '#f59e0b',
+              ruby: '#f43f5e',
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- WaveSurfer.js CDN -->
+  <script src="https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.min.js"></script>
+
+  <style>
+    /* Studio Hardware Custom Scrollbar & Aesthetics */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0e1217;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #263042;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #344158;
+    }
+
+    .knob-glow-cyan {
+      box-shadow: 0 0 15px -2px rgba(0, 240, 255, 0.35);
+    }
+    .knob-glow-amber {
+      box-shadow: 0 0 15px -2px rgba(245, 158, 11, 0.35);
+    }
+    .led-cyan {
+      box-shadow: 0 0 8px 1px #00f0ff;
+    }
+    .led-amber {
+      box-shadow: 0 0 8px 1px #f59e0b;
+    }
+    .led-green {
+      box-shadow: 0 0 8px 1px #10b981;
+    }
+
+    .studio-panel {
+      background: linear-gradient(180deg, #161c26 0%, #10151e 100%);
+      border: 1px solid #232c3d;
+    }
+    .studio-inset {
+      background: #090c10;
+      border: 1px solid #1a2230;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);
+    }
+
+    /* Equalizer Bars Animation */
+    @keyframes eq1 { 0%, 100% { height: 4px; } 50% { height: 16px; } }
+    @keyframes eq2 { 0%, 100% { height: 14px; } 50% { height: 6px; } }
+    @keyframes eq3 { 0%, 100% { height: 8px; } 50% { height: 18px; } }
+    @keyframes eq4 { 0%, 100% { height: 18px; } 50% { height: 4px; } }
+
+    .eq-bar-1 { animation: eq1 0.7s ease-in-out infinite; }
+    .eq-bar-2 { animation: eq2 0.5s ease-in-out infinite; }
+    .eq-bar-3 { animation: eq3 0.85s ease-in-out infinite; }
+    .eq-bar-4 { animation: eq4 0.6s ease-in-out infinite; }
+    .eq-paused * { animation-play-state: paused; height: 4px !important; }
+  </style>
+</head>
+<body class="bg-studio-950 text-slate-200 min-h-screen font-sans selection:bg-accent-cyan/30 selection:text-white antialiased flex flex-col justify-between">
+
+  <!-- TOP STATUS STRIP -->
+  <header class="border-b border-studio-800 bg-studio-900/90 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between text-xs font-mono text-studio-400">
+      <div class="flex items-center gap-3">
+        <span class="inline-flex items-center gap-1.5 text-slate-300 font-semibold tracking-wider uppercase">
+          <span class="w-2 h-2 rounded-full bg-accent-emerald led-green"></span>
+          RolandKapiStudio
+        </span>
+        <span class="hidden md:inline-block text-studio-600">|</span>
+        <span class="hidden md:inline-block text-studio-400">DSP AUDIO ENGINE • 24-BIT / 96KHZ CALIBRATED</span>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <!-- Hotkey shortcuts indicator -->
+        <div class="hidden sm:flex items-center gap-2 text-[11px] text-studio-400">
+          <span>SHORTCUTS:</span>
+          <kbd class="px-1.5 py-0.5 rounded bg-studio-800 border border-studio-700 text-slate-200">A</kbd>
+          <kbd class="px-1.5 py-0.5 rounded bg-studio-800 border border-studio-700 text-slate-200">B</kbd>
+          <span>Switch</span>
+          <kbd class="px-1.5 py-0.5 rounded bg-studio-800 border border-studio-700 text-slate-200">Space</kbd>
+          <span>Play</span>
+        </div>
+        
+        <div class="flex items-center gap-1.5 px-2 py-0.5 rounded bg-studio-950 border border-studio-800 text-[11px] text-accent-cyan">
+          <span class="w-1.5 h-1.5 rounded-full bg-accent-cyan animate-pulse"></span>
+          <span>A/B SYNC LOCK: ON</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 w-full flex-1 flex flex-col gap-6">
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+      
+      <!-- 1. PROFILE & CONTACT CARD -->
+      <section class="lg:col-span-4 flex flex-col justify-between studio-panel rounded-xl p-5 shadow-xl relative overflow-hidden" aria-label="Audio Engineer Profile">
+        <div class="absolute top-2.5 left-2.5 w-1.5 h-1.5 rounded-full bg-studio-700 border border-studio-600"></div>
+        <div class="absolute top-2.5 right-2.5 w-1.5 h-1.5 rounded-full bg-studio-700 border border-studio-600"></div>
+        <div class="absolute bottom-2.5 left-2.5 w-1.5 h-1.5 rounded-full bg-studio-700 border border-studio-600"></div>
+        <div class="absolute bottom-2.5 right-2.5 w-1.5 h-1.5 rounded-full bg-studio-700 border border-studio-600"></div>
+
+        <div>
+          <div class="flex items-start gap-4 mb-4">
+            <!-- Avatar Frame -->
+            <div class="relative shrink-0">
+              <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-gradient-to-br from-studio-750 via-studio-800 to-studio-900 border border-studio-600/80 p-0.5 shadow-md flex items-center justify-center overflow-hidden">
+                <div class="w-full h-full rounded-[10px] bg-studio-900 flex flex-col items-center justify-center text-center relative group">
+                  <span class="text-xl sm:text-2xl font-bold tracking-tight text-white font-mono">RK</span>
+                  <span class="text-[9px] uppercase tracking-widest text-accent-cyan font-medium">STUDIO</span>
+                </div>
+              </div>
+              <div class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-studio-900 border-2 border-studio-900 flex items-center justify-center">
+                <span class="w-2.5 h-2.5 rounded-full bg-accent-emerald led-green"></span>
+              </div>
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-studio-800/80 border border-studio-700/60 text-[10px] font-mono text-studio-300 uppercase tracking-wider mb-1">
+                Mixing Engineer
+              </div>
+              <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-white truncate">
+                Roland Kapi
+              </h1>
+              <p class="text-xs text-studio-400 flex items-center gap-1.5 mt-0.5">
+                <span class="font-medium text-studio-300">RolandKapiStudio</span>
+                <span>•</span>
+                <span>Reference Client Deck</span>
+              </p>
+            </div>
+          </div>
+
+          <div class="text-xs text-studio-300 leading-relaxed bg-studio-900/70 border border-studio-800/80 rounded-lg p-3 mb-4">
+            Compare the raw, unpolished mix against the final polished master in zero-latency real time. <br>Switch instantly between <strong class="text-accent-cyan font-semibold">[A: Master]</strong> and <strong class="text-accent-amber font-semibold">[B: Rough]</strong> without losing tempo or timing.
+          </div>
+
+          <!-- DIRECT CONTACT LINKS -->
+          <div class="space-y-2">
+            <span class="text-[10px] font-mono uppercase tracking-wider text-studio-400 block mb-1.5">Direct Communication & Bookings:</span>
+
+            <!-- Email -->
+            <a href="mailto:rkapi739@gmail.com" target="_blank" rel="noopener noreferrer" 
+               class="group flex items-center justify-between px-3 py-2 rounded-lg bg-studio-900/90 border border-studio-750 hover:border-accent-cyan/60 hover:bg-studio-850 transition text-xs">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-7 h-7 rounded bg-studio-800 flex items-center justify-center text-studio-300 group-hover:text-accent-cyan transition shrink-0">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                  </svg>
+                </div>
+                <div class="truncate">
+                  <span class="text-[10px] text-studio-400 block font-mono">E-MAIL</span>
+                  <span class="text-slate-200 group-hover:text-white font-medium truncate">rkapi739@gmail.com</span>
+                </div>
+              </div>
+              <span class="text-studio-500 group-hover:text-accent-cyan transition text-xs">↗</span>
+            </a>
+
+            <!-- WhatsApp -->
+            <a href="https://wa.me/50662228591" target="_blank" rel="noopener noreferrer" 
+               class="group flex items-center justify-between px-3 py-2 rounded-lg bg-studio-900/90 border border-studio-750 hover:border-accent-emerald/60 hover:bg-studio-850 transition text-xs">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-7 h-7 rounded bg-studio-800 flex items-center justify-center text-studio-300 group-hover:text-accent-emerald transition shrink-0">
+                  <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2zm.01 1.67c4.55 0 8.25 3.7 8.25 8.24 0 2.2-.86 4.28-2.42 5.84a8.18 8.18 0 01-5.83 2.41c-1.47 0-2.93-.39-4.21-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.186 8.186 0 01-1.25-4.39c0-4.54 3.7-8.24 8.25-8.24zm4.52 11.66c-.25-.12-1.47-.72-1.7-.81-.23-.08-.39-.12-.56.12-.17.25-.65.81-.8 1-.15.18-.3.2-.55.08-.25-.12-1.05-.39-2-1.23-.74-.66-1.23-1.47-1.38-1.72-.15-.25-.02-.38.11-.5.11-.11.25-.29.37-.43.12-.15.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.12-.56-1.35-.77-1.85-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1 0 1.24.9 2.44 1.03 2.61.12.17 1.78 2.72 4.31 3.81.6.26 1.07.41 1.44.53.61.19 1.16.17 1.6.1.49-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.06-.1-.23-.17-.48-.3z"/>
+                  </svg>
+                </div>
+                <div class="truncate">
+                  <span class="text-[10px] text-studio-400 block font-mono">WHATSAPP</span>
+                  <span class="text-slate-200 group-hover:text-white font-medium truncate">+506 6222 8591</span>
+                </div>
+              </div>
+              <span class="text-studio-500 group-hover:text-accent-emerald transition text-xs">↗</span>
+            </a>
+
+            <!-- Discord -->
+            <a href="https://discord.com/users/rkapi739" target="_blank" rel="noopener noreferrer" 
+               class="group flex items-center justify-between px-3 py-2 rounded-lg bg-studio-900/90 border border-studio-750 hover:border-indigo-400/60 hover:bg-studio-850 transition text-xs">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-7 h-7 rounded bg-studio-800 flex items-center justify-center text-studio-300 group-hover:text-indigo-400 transition shrink-0">
+                  <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.893.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+                  </svg>
+                </div>
+                <div class="truncate">
+                  <span class="text-[10px] text-studio-400 block font-mono">DISCORD</span>
+                  <span class="text-slate-200 group-hover:text-white font-medium truncate">rkapi739</span>
+                </div>
+              </div>
+              <span class="text-studio-500 group-hover:text-indigo-400 transition text-xs">↗</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-studio-800 flex items-center justify-between text-[10px] font-mono text-studio-400">
+          <span>MONITOR SYSTEM: ACTIVE</span>
+          <span class="text-accent-cyan">CALIBRATION: FLAT</span>
+        </div>
+      </section>
+
+      <!-- 2. PLAYER & WAVEFORM WORKSTATION -->
+      <section class="lg:col-span-8 flex flex-col studio-panel rounded-xl p-5 sm:p-6 shadow-xl relative overflow-hidden" aria-label="Audio Player and Waveform Display">
+        
+        <!-- Track Title & Status Bar -->
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-studio-800">
+          <div class="min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+              <span id="activeVariantBadge" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold tracking-wider uppercase bg-accent-cyan/15 text-accent-cyan border border-accent-cyan/30">
+                [A] MIXED • MASTERED
+              </span>
+              <span id="trackGenreBadge" class="px-2 py-0.5 rounded text-[10px] font-mono text-studio-400 bg-studio-850 border border-studio-750">
+                SYNTHWAVE
+              </span>
+              <span id="trackBpmBadge" class="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] font-mono text-studio-400 bg-studio-850 border border-studio-750">
+                120 BPM • F MIN
+              </span>
+            </div>
+            <h2 id="currentTrackTitle" class="text-lg sm:text-xl font-bold tracking-tight text-white truncate">
+              Neon Horizon
+            </h2>
+            <p id="currentTrackArtist" class="text-xs text-studio-400 truncate">
+              Roland Kapi Studio Master • Version 3.2
+            </p>
+          </div>
+
+          <!-- Stereo Level Meters -->
+          <div class="hidden sm:flex items-center gap-2 bg-studio-950 px-3 py-2 rounded-lg border border-studio-800">
+            <div class="text-[9px] font-mono text-studio-400 space-y-1">
+              <div>L</div>
+              <div>R</div>
+            </div>
+            <div class="space-y-1">
+              <div class="w-24 h-1.5 bg-studio-850 rounded-full overflow-hidden flex">
+                <div id="meterL" class="h-full bg-gradient-to-r from-accent-emerald via-accent-cyan to-accent-amber w-2/3 transition-all duration-75"></div>
+              </div>
+              <div class="w-24 h-1.5 bg-studio-850 rounded-full overflow-hidden flex">
+                <div id="meterR" class="h-full bg-gradient-to-r from-accent-emerald via-accent-cyan to-accent-amber w-3/4 transition-all duration-75"></div>
+              </div>
+            </div>
+            <span class="text-[9px] font-mono text-accent-cyan ml-1" id="lufsDisplay">-9.2 LUFS</span>
+          </div>
+        </div>
+
+        <!-- WAVEFORM DISPLAY WORKSPACE -->
+        <div class="relative mb-5">
+          <div class="studio-inset rounded-lg p-3 sm:p-4 relative select-none">
+            <div class="relative h-28 sm:h-36 w-full cursor-pointer group" id="waveformContainer" title="Click or drag to seek">
+              <div class="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-15">
+                <div class="w-full h-px bg-studio-400"></div>
+                <div class="w-full h-px bg-studio-400"></div>
+                <div class="w-full h-px bg-studio-400"></div>
+                <div class="w-full h-px bg-studio-400"></div>
+              </div>
+              <div class="absolute top-1/2 left-0 right-0 h-px bg-studio-600/40 pointer-events-none"></div>
+
+              <canvas id="waveformCanvas" class="w-full h-full block rounded"></canvas>
+
+              <div id="waveformHoverLine" class="absolute top-0 bottom-0 w-px bg-white/60 pointer-events-none hidden">
+                <span id="waveformHoverTooltip" class="absolute -top-6 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-studio-900 border border-studio-700 text-[10px] font-mono text-white shadow pointer-events-none">
+                  00:00
+                </span>
+              </div>
+            </div>
+
+            <div class="mt-2 flex items-center justify-between text-xs font-mono text-studio-400 pt-1 border-t border-studio-855">
+              <div class="flex items-center gap-2">
+                <span class="text-white font-semibold text-sm" id="currentTimeDisplay">00:00</span>
+                <span class="text-studio-600">/</span>
+                <span id="totalDurationDisplay" class="text-studio-400">03:24</span>
+              </div>
+
+              <div class="flex items-center gap-3 text-[11px]">
+                <span>SOURCE: 96kHz PCM</span>
+                <span class="text-studio-600">•</span>
+                <span class="text-accent-cyan font-medium">STEREO TRUE-PEAK</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- A/B DUAL COMPARISON SWITCH (THE TWO REQUIRED OPTIONS) -->
+        <div class="mb-5 bg-studio-900/90 border border-studio-750 rounded-xl p-3 sm:p-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[11px] font-mono uppercase tracking-wider text-studio-400 flex items-center gap-1.5">
+              <span>REFERENCE SINK COMPARISON</span>
+              <span class="text-studio-500">(Instant Seamless Sync)</span>
+            </span>
+            <span class="text-[10px] font-mono text-studio-400">
+              PRESS <kbd class="px-1 py-0.2 bg-studio-800 border border-studio-700 text-slate-200 rounded">A</kbd> OR <kbd class="px-1 py-0.2 bg-studio-800 border border-studio-700 text-slate-200 rounded">B</kbd>
+            </span>
+          </div>
+
+          <!-- ONLY TWO OPTIONS: [ A: Master ] vs [ B: Rough ] -->
+          <div class="grid grid-cols-2 gap-3">
+            <!-- OPTION A: MIXED -->
+            <button id="btnVariantA" type="button" 
+                    class="group relative py-3.5 px-4 rounded-lg border-2 transition-all duration-150 flex items-center justify-between overflow-hidden bg-studio-850 border-accent-cyan knob-glow-cyan"
+                    aria-label="Switch to Track A: MIXED (Mastered)">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-3 h-3 rounded-full bg-accent-cyan led-cyan shrink-0" id="indicatorA"></div>
+                <div class="text-left">
+                  <div class="text-sm sm:text-base font-bold tracking-tight text-white flex items-center gap-2">
+                    <span>A</span>
+                    <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-accent-cyan/20 text-accent-cyan border border-accent-cyan/30">MASTER</span>
+                  </div>
+                  <div class="text-[11px] text-studio-400">Mixed by Roland K</div>
+                </div>
+              </div>
+              <kbd class="hidden sm:inline-block px-2 py-1 rounded bg-studio-900 border border-studio-700 text-[10px] font-mono text-slate-300">
+                Key [A]
+              </kbd>
+            </button>
+
+            <!-- OPTION B: ROUGH -->
+            <button id="btnVariantB" type="button" 
+                    class="group relative py-3.5 px-4 rounded-lg border-2 transition-all duration-150 flex items-center justify-between overflow-hidden bg-studio-850 border-studio-750 hover:border-studio-600"
+                    aria-label="Switch to Track B: Rough">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-3 h-3 rounded-full bg-studio-600 shrink-0" id="indicatorB"></div>
+                <div class="text-left">
+                  <div class="text-sm sm:text-base font-bold tracking-tight text-slate-300 flex items-center gap-2">
+                    <span>B</span>
+                    <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-studio-800 text-studio-400 border border-studio-700">RAW</span>
+                  </div>
+                  <div class="text-[11px] text-studio-400">Recorded multitracks</div>
+                </div>
+              </div>
+              <kbd class="hidden sm:inline-block px-2 py-1 rounded bg-studio-900 border border-studio-700 text-[10px] font-mono text-studio-400">
+                Key [B]
+              </kbd>
+            </button>
+          </div>
+        </div>
+
+        <!-- PLAYER CONTROLS (Play/Pause, Loop, Time, Seek, Volume) -->
+        <div class="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-studio-800">
+          
+          <div class="flex items-center gap-2">
+            <!-- Step Back -5s -->
+            <button id="btnPrevSec" type="button" title="Rewind 5 seconds (Left Arrow)" 
+                    class="w-9 h-9 rounded-lg bg-studio-850 border border-studio-750 hover:bg-studio-750 hover:text-white text-studio-300 flex items-center justify-center transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.333 4zM4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8L4.066 11.2z"></path>
+              </svg>
+            </button>
+
+            <!-- Main Play / Pause Button -->
+            <button id="btnPlayPause" type="button" 
+                    class="h-11 px-5 rounded-lg bg-white text-studio-950 hover:bg-slate-200 active:scale-95 font-semibold flex items-center gap-2.5 transition shadow-lg shadow-white/5"
+                    aria-label="Play or Pause">
+              <svg id="iconPlay" class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+              <svg id="iconPause" class="w-5 h-5 fill-current hidden" viewBox="0 0 24 24">
+                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+              </svg>
+              <span id="playPauseText" class="text-sm font-bold tracking-tight">Play</span>
+              <kbd class="text-[10px] font-mono px-1 py-0.2 bg-studio-200 text-studio-900 rounded font-normal">Space</kbd>
+            </button>
+
+            <!-- Step Forward +5s -->
+            <button id="btnNextSec" type="button" title="Forward 5 seconds (Right Arrow)" 
+                    class="w-9 h-9 rounded-lg bg-studio-850 border border-studio-750 hover:bg-studio-750 hover:text-white text-studio-300 flex items-center justify-center transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.933 12.8a1 1 0 000-1.6L6.6 7.2A1 1 0 005 8v8a1 1 0 001.6.8l5.333-4zM19.933 12.8a1 1 0 000-1.6l-5.333-4A1 1 0 0013 8v8a1 1 0 001.6.8l5.333-4z"></path>
+              </svg>
+            </button>
+
+            <!-- Loop Button -->
+            <button id="btnLoop" type="button" 
+                    class="h-9 px-3 rounded-lg bg-studio-850 border border-studio-750 hover:bg-studio-750 text-studio-300 flex items-center gap-1.5 transition text-xs font-mono"
+                    aria-label="Toggle Loop">
+              <span class="w-2 h-2 rounded-full bg-studio-600" id="loopLed"></span>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+              </svg>
+              <span>Loop [L]</span>
+            </button>
+          </div>
+
+          <!-- Volume & Monitor Output Section -->
+          <div class="flex items-center gap-3">
+            <button id="btnMute" type="button" title="Mute/Unmute (M)" 
+                    class="text-studio-400 hover:text-white transition">
+              <svg id="iconVolume" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
+              </svg>
+            </button>
+            <div class="flex items-center gap-2">
+              <input id="volumeSlider" type="range" min="0" max="1" step="0.01" value="0.85" 
+                     class="w-20 sm:w-28 accent-accent-cyan bg-studio-800 h-1.5 rounded-lg cursor-pointer" 
+                     aria-label="Volume Slider">
+              <span id="volumeDbText" class="text-[11px] font-mono text-studio-400 w-12 text-right">-1.4 dB</span>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+    </div>
+
+    <!-- SECTION 3: TRACKLIST -->
+    <section class="studio-panel rounded-xl p-5 sm:p-6 shadow-xl" aria-label="Reference Tracklist">
+      
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-studio-800">
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-base sm:text-lg font-bold tracking-tight text-white">
+              Studio Reference Master Catalog
+            </h2>
+            <span id="trackCountBadge" class="px-2 py-0.5 rounded text-[11px] font-mono text-accent-cyan bg-accent-cyan/10 border border-accent-cyan/30">
+              5 Tracks Available
+            </span>
+          </div>
+          <p class="text-xs text-studio-400 mt-0.5">
+            Select any song to load its dedicated A/B stems into the waveform monitor.
+          </p>
+        </div>
+
+        <!-- Search / Filter & Upload custom mix -->
+        <div class="flex items-center gap-2">
+          <div class="relative w-full sm:w-60">
+            <input id="searchTrackInput" type="text" placeholder="Filter by title, genre, BPM..." 
+                   class="w-full bg-studio-900 border border-studio-750 text-xs rounded-lg pl-8 pr-3 py-2 text-slate-200 placeholder-studio-500 focus:outline-none focus:border-accent-cyan/60 transition">
+            <svg class="w-3.5 h-3.5 text-studio-500 absolute left-2.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+          </div>
+
+          <button id="btnUploadModal" type="button" 
+                  class="px-3 py-2 rounded-lg bg-studio-850 hover:bg-studio-800 border border-studio-750 hover:border-studio-600 text-xs font-mono text-slate-300 flex items-center gap-1.5 transition shrink-0">
+            <svg class="w-3.5 h-3.5 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+            </svg>
+            <span class="hidden md:inline">Test Your Mix</span>
+            <span class="md:hidden">Upload</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Tracklist Table Container -->
+      <div class="mt-4 overflow-x-auto">
+        <div class="min-w-[640px] space-y-2" id="tracklistContainer">
+          <!-- Dynamically populated via JavaScript -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- UPLOAD CUSTOM MIX MODAL -->
+  <dialog id="uploadDialog" class="bg-transparent backdrop:bg-black/70 p-4 max-w-lg w-full">
+    <div class="studio-panel rounded-xl p-6 shadow-2xl border border-studio-700 text-slate-200">
+      <div class="flex items-center justify-between pb-3 border-b border-studio-800">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <svg class="w-4 h-4 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+          </svg>
+          Test Custom Audio Stems (A/B)
+        </h3>
+        <button id="btnCloseUploadModal" type="button" class="text-studio-400 hover:text-white text-lg font-mono">✕</button>
+      </div>
+
+      <p class="text-xs text-studio-400 mt-2">
+        Upload your own audio files (WAV, MP3, FLAC) to test Roland's A/B player right here in your browser. All decoding is processed locally on your machine.
+      </p>
+
+      <div class="space-y-4 mt-4">
+        <div>
+          <label class="block text-xs font-mono text-studio-300 uppercase mb-1">Track Title</label>
+          <input id="customTrackTitle" type="text" placeholder="My New Single" value="Client Custom Mix" 
+                 class="w-full bg-studio-900 border border-studio-750 text-xs rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-accent-cyan">
+        </div>
+
+        <div>
+          <label class="block text-xs font-mono text-accent-cyan uppercase mb-1">[A] Master / Mixed Audio File</label>
+          <input id="fileInputA" type="file" accept="audio/*" 
+                 class="w-full text-xs text-studio-300 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-studio-800 file:text-accent-cyan hover:file:bg-studio-750 cursor-pointer">
+        </div>
+
+        <div>
+          <label class="block text-xs font-mono text-accent-amber uppercase mb-1">[B] Rough Mix Audio File</label>
+          <input id="fileInputB" type="file" accept="audio/*" 
+                 class="w-full text-xs text-studio-300 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-studio-800 file:text-accent-amber hover:file:bg-studio-750 cursor-pointer">
+        </div>
+      </div>
+
+      <div class="mt-6 flex justify-end gap-3 pt-3 border-t border-studio-800">
+        <button id="btnCancelUpload" type="button" class="px-4 py-2 rounded-lg bg-studio-850 hover:bg-studio-800 text-xs text-studio-300 transition">Cancel</button>
+        <button id="btnSubmitCustomTrack" type="button" class="px-4 py-2 rounded-lg bg-accent-cyan hover:bg-cyan-300 text-studio-950 font-bold text-xs transition">Load into Player</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- STUDIO FOOTER -->
+  <footer class="border-t border-studio-800/80 bg-studio-900/50 py-4 mt-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-studio-400 font-mono">
+      <div>
+        © 2026 <strong class="text-slate-300">Roland Kapi Studio</strong> All rights reserved.
+      </div>
+      <div class="flex items-center gap-4">
+        <span>Reference Portfolio Build</span>
+        <span>•</span>
+        <a href="mailto:rkapi739@gmail.com" class="hover:text-accent-cyan transition">rkapi739@gmail.com</a>
+        <span>•</span>
+        <a href="https://wa.me/50662228591" target="_blank" class="hover:text-accent-emerald transition">+506 6222 8591</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ========================================== -->
+  <!-- VANILLA JAVASCRIPT APPLICATION CORE LOGIC  -->
+  <!-- ========================================== -->
+  <script>
+    /**
+     * Roland Kapi Studio - A/B Reference Engine
+     * Self-contained, zero-dependency client player with Web Audio API synthesis & synchronization
+     */
+    (function () {
+      'use strict';
+
+      // ------------------------------------------
+      // 1. TRACKLIST DATABASE (Expandable JS Array)
+      // ------------------------------------------
+      const TRACKS = [
+        {
+          id: 'trk-1',
+          title: 'Not Mine To Lose',
+          artist: 'Aly Navarro',
+          genre: 'Indie',
+          bpm: 124,
+          key: 'G maj',
+          duration: 204, // 03:24
+          date: '2026.09',
+          version: 'Roland K unofficial mix',
+          notes: 'Typically we have songs with drums – drums are fun.  That said, sometimes mixing songs that don’t have that foundational groove can be a really fun challenge.  “Mine to lose” by Aly Navarro sounds huge despite not having a rhythm section.',
+          baseFrequency: 174.61, // F3
+          tempo: 124,
+        },
+        {
+          id: 'trk-2',
+          title: 'Do Not Resuscitate',
+          artist: 'Aly Navarro',
+          genre: 'Indie Pop',
+          bpm: 130,
+          key: 'Eb maj',
+          duration: 232, // 03:52
+          date: '2026.09',
+          version: 'Roland K unofficial mix',
+          notes: 'Dreamy vocals, ambient steel, and warm acoustic drums – all backing up a really well written song!',
+          baseFrequency: 138.59, // Db3
+          tempo: 130,
+        },
+        {
+          id: 'trk-3',
+          title: 'What Kind A Girl Would I Be',
+          artist: 'Roger Fournier feat. Tania Hancheroff',
+          genre: 'Country Rock',
+          bpm: 94,
+          key: 'D maj',
+          duration: 168, // 02:48
+          date: '2026.08',
+          version: 'Roland K unofficial mix',
+          notes: 'BIG guitars, babbling banjos, and a commanding lead vocal make this song a super fun.',
+          baseFrequency: 146.83, // D3
+          tempo: 94,
+        },
+        {
+          id: 'trk-4',
+          title: 'Seven',
+          artist: 'Eric Corriveau',
+          genre: 'Indie Folk / Rock',
+          bpm: 95,
+          key: 'Ab maj',
+          duration: 252, // 04:12
+          date: '2026.08',
+          version: 'Roland K unofficial mix',
+          notes: '“Seven” has huge vintage swagger, blending John Meyer vibes with a sassy retro feel. The arrangement in this song is super slick and fits together so well!',
+          baseFrequency: 196.00, // G3
+          tempo: 95,
+        },
+        {
+          id: 'trk-5',
+          title: 'Blue Wild Yonder',
+          artist: 'Passmore and Johnston',
+          genre: 'Indie Folk / Rock',
+          bpm: 133,
+          key: 'C maj',
+          duration: 252, // 04:12
+          date: '2026.07',
+          version: 'Roland K unofficial mix',
+          notes: 'This one was primarily written by Andrew Johnston, who also sings it.  Hope you enjoy this breezy strummer!',
+          baseFrequency: 196.00, // G3
+          tempo: 133,
+//        },
+//        {
+//          id: 'trk-6',
+//          title: 'That's All It Was',
+//          artist: 'Eric Corriveau',
+//          genre: 'Moody Pop Rock',
+//          bpm: 77,
+//          key: 'B maj',
+//          duration: 252, // 04:12
+//          date: '2026.07',
+//          version: 'Roland K unofficial mix',
+//          notes: 'We are back with another moody pop rock song courtesy of Eric //Corriveau!  This production is quite minimal but definitely has the potential //to sound huge.',
+//          baseFrequency: 196.00, // G3
+//          tempo: 77,
+//        },
+//        {
+//          id: 'trk-7',
+//          title: 'Butter',
+//          artist: 'Avrim Topel',
+//          genre: 'Pop Country',
+//          bpm: 95,
+//          key: 'G maj',
+//          duration: 252, // 04:12
+//          date: '2026.06',
+//          version: 'Roland K unofficial mix',
+//          notes: '“Butter” has a playful, groovy vibe and is backed up nicely //by driving drums, jangly guitars and hooky synths.',
+//          baseFrequency: 196.00, // G3
+//          tempo: 95,
+//        },
+//        {
+//          id: 'trk-8',
+//          title: 'The History',
+//          artist: 'Eric Corriveau',
+//          genre: 'Moody Pop Rock',
+//          bpm: 87.5,
+//          key: 'E maj',
+//          duration: 218, // 03:38
+//          date: '2026.05.',
+//          version: 'Roland K unofficial mix',
+//          notes: 'Killer groove, amazing lead vocal, and a jangly ethereal wall //of instruments make this tune a joy to mix!',
+//          baseFrequency: 220.00, // A3
+//          tempo: 87.5,
+        }
+      ];
+
+      // ------------------------------------------
+      // 2. APPLICATION STATE
+      // ------------------------------------------
+      const state = {
+        currentTrackIndex: 0,
+        currentVariant: 'A', // 'A' = Mixed (Mastered), 'B' = Rough
+        isPlaying: false,
+        currentTime: 0,
+        duration: TRACKS[0].duration,
+        isLooping: true,
+        volume: 0.85,
+        isMuted: false,
+        searchQuery: '',
+        userAudioBuffers: {}, // For uploaded files
+      };
+
+      // ------------------------------------------
+      // 3. WEB AUDIO API SYNCHRONIZED DSP ENGINE
+      // ------------------------------------------
+      let audioCtx = null;
+      let gainNodeA = null;
+      let gainNodeB = null;
+      let masterGainNode = null;
+      let analyserNode = null;
+      let synthSources = [];
+      let playbackStartTime = 0;
+      let playbackOffset = 0;
+      let animationFrameId = null;
+
+      function getAudioContext() {
+        if (!audioCtx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          audioCtx = new AudioContextClass();
+
+          masterGainNode = audioCtx.createGain();
+          masterGainNode.gain.value = state.volume;
+
+          analyserNode = audioCtx.createAnalyser();
+          analyserNode.fftSize = 64;
+
+          gainNodeA = audioCtx.createGain();
+          gainNodeB = audioCtx.createGain();
+
+          // Connect routing
+          gainNodeA.connect(masterGainNode);
+          gainNodeB.connect(masterGainNode);
+          masterGainNode.connect(analyserNode);
+          analyserNode.connect(audioCtx.destination);
+
+          updateGainsForVariant(state.currentVariant, false);
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        return audioCtx;
+      }
+
+      /**
+       * Smooth micro-crossfade between Track A and Track B (click-free instant switch)
+       */
+      function updateGainsForVariant(variant, smooth = true) {
+        if (!audioCtx || !gainNodeA || !gainNodeB) return;
+        const now = audioCtx.currentTime;
+        const fadeTime = smooth ? 0.025 : 0.001; // 25ms crossfade
+
+        if (variant === 'A') {
+          gainNodeA.gain.cancelScheduledValues(now);
+          gainNodeA.gain.linearRampToValueAtTime(1.0, now + fadeTime);
+          gainNodeB.gain.cancelScheduledValues(now);
+          gainNodeB.gain.linearRampToValueAtTime(0.0001, now + fadeTime);
+        } else {
+          gainNodeA.gain.cancelScheduledValues(now);
+          gainNodeA.gain.linearRampToValueAtTime(0.0001, now + fadeTime);
+          gainNodeB.gain.cancelScheduledValues(now);
+          gainNodeB.gain.linearRampToValueAtTime(0.85, now + fadeTime);
+        }
+      }
+
+      /**
+       * Procedural Multi-Layer Music Synthesizer for High-Fidelity Demo Tracks
+       * Generates dual synchronized stems (A = Mastered, B = Rough) with 0 network latency
+       */
+      function startSynthesizerPlayback() {
+        stopSynthesizerPlayback();
+        const ctx = getAudioContext();
+        const track = TRACKS[state.currentTrackIndex];
+        const baseFreq = track.baseFrequency || 174.61;
+        const bpm = track.bpm || 120;
+        const beatSec = 60 / bpm;
+
+        // Custom uploaded audio buffer playback if available
+        if (state.userAudioBuffers[track.id]) {
+          const custom = state.userAudioBuffers[track.id];
+          const srcA = ctx.createBufferSource();
+          srcA.buffer = custom.bufferA || custom.bufferB;
+          srcA.loop = state.isLooping;
+          srcA.connect(gainNodeA);
+
+          const srcB = ctx.createBufferSource();
+          srcB.buffer = custom.bufferB || custom.bufferA;
+          srcB.loop = state.isLooping;
+          srcB.connect(gainNodeB);
+
+          srcA.start(0, state.currentTime);
+          srcB.start(0, state.currentTime);
+          synthSources.push(srcA, srcB);
+
+          srcA.onended = () => {
+            if (!state.isLooping && state.isPlaying) {
+              handleTrackEnd();
+            }
+          };
+          return;
+        }
+
+        // Stem A (Master): Rich harmonics, warm sub, stereo chorus lead, tight compression
+        // Stem B (Rough): Thinner bass, raw un-EQed lead, resonant highs, no stereo widening
+
+        // 1. Kick & Bassline Node
+        const bassOsc = ctx.createOscillator();
+        const bassGain = ctx.createGain();
+        bassOsc.type = 'triangle';
+        bassOsc.frequency.setValueAtTime(baseFreq / 2, ctx.currentTime);
+        bassGain.gain.setValueAtTime(0.4, ctx.currentTime);
+
+        const bassLfo = ctx.createOscillator();
+        bassLfo.frequency.setValueAtTime(bpm / 60 * 2, ctx.currentTime);
+        const bassLfoGain = ctx.createGain();
+        bassLfoGain.gain.setValueAtTime(0.15, ctx.currentTime);
+        bassLfo.connect(bassLfoGain);
+        bassLfoGain.connect(bassGain.gain);
+
+        bassOsc.connect(bassGain);
+        bassGain.connect(gainNodeA);
+
+        const roughBassFilter = ctx.createBiquadFilter();
+        roughBassFilter.type = 'highpass';
+        roughBassFilter.frequency.setValueAtTime(120, ctx.currentTime);
+        bassGain.connect(roughBassFilter);
+        roughBassFilter.connect(gainNodeB);
+
+        // 2. Chords Pad
+        const chordOsc1 = ctx.createOscillator();
+        const chordOsc2 = ctx.createOscillator();
+        const chordGain = ctx.createGain();
+        chordOsc1.type = 'sawtooth';
+        chordOsc2.type = 'sawtooth';
+        chordOsc1.frequency.setValueAtTime(baseFreq, ctx.currentTime);
+        chordOsc2.frequency.setValueAtTime(baseFreq * 1.25, ctx.currentTime);
+        chordGain.gain.setValueAtTime(0.12, ctx.currentTime);
+
+        const masterChordFilter = ctx.createBiquadFilter();
+        masterChordFilter.type = 'lowpass';
+        masterChordFilter.frequency.setValueAtTime(4500, ctx.currentTime);
+        masterChordFilter.Q.setValueAtTime(1.0, ctx.currentTime);
+
+        chordOsc1.connect(masterChordFilter);
+        chordOsc2.connect(masterChordFilter);
+        masterChordFilter.connect(chordGain);
+        chordGain.connect(gainNodeA);
+
+        const roughChordFilter = ctx.createBiquadFilter();
+        roughChordFilter.type = 'peaking';
+        roughChordFilter.frequency.setValueAtTime(700, ctx.currentTime);
+        roughChordFilter.gain.setValueAtTime(4.0, ctx.currentTime);
+        chordGain.connect(roughChordFilter);
+        roughChordFilter.connect(gainNodeB);
+
+        // 3. Melodic Lead Arpeggiator
+        const leadOsc = ctx.createOscillator();
+        const leadGain = ctx.createGain();
+        leadOsc.type = 'sine';
+        leadOsc.frequency.setValueAtTime(baseFreq * 2, ctx.currentTime);
+        leadGain.gain.setValueAtTime(0.18, ctx.currentTime);
+
+        leadOsc.connect(leadGain);
+        leadGain.connect(gainNodeA);
+        leadGain.connect(gainNodeB);
+
+        bassOsc.start();
+        bassLfo.start();
+        chordOsc1.start();
+        chordOsc2.start();
+        leadOsc.start();
+
+        synthSources.push(bassOsc, bassLfo, chordOsc1, chordOsc2, leadOsc);
+      }
+
+      function stopSynthesizerPlayback() {
+        for (const src of synthSources) {
+          try {
+            src.stop();
+            src.disconnect();
+          } catch (e) {}
+        }
+        synthSources = [];
+      }
+
+      // ------------------------------------------
+      // 4. PLAYBACK CONTROLS & TIMERS
+      // ------------------------------------------
+      function play() {
+        const ctx = getAudioContext();
+        state.isPlaying = true;
+        playbackStartTime = ctx.currentTime - state.currentTime;
+
+        startSynthesizerPlayback();
+        updatePlayPauseUI();
+        startAnimationFrameLoop();
+        renderTracklist();
+      }
+
+      function pause() {
+        state.isPlaying = false;
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId);
+          animationFrameId = null;
+        }
+        stopSynthesizerPlayback();
+        updatePlayPauseUI();
+        renderTracklist();
+      }
+
+      function togglePlayPause() {
+        if (state.isPlaying) {
+          pause();
+        } else {
+          play();
+        }
+      }
+
+      function seekTo(seconds) {
+        state.currentTime = Math.max(0, Math.min(state.duration, seconds));
+        if (audioCtx) {
+          playbackStartTime = audioCtx.currentTime - state.currentTime;
+        }
+        if (state.isPlaying) {
+          startSynthesizerPlayback();
+        }
+        updateTimeDisplays();
+        drawWaveform();
+      }
+
+      function handleTrackEnd() {
+        if (state.isLooping) {
+          seekTo(0);
+          play();
+        } else {
+          if (state.currentTrackIndex + 1 < TRACKS.length) {
+            loadTrack(state.currentTrackIndex + 1, true);
+          } else {
+            pause();
+            seekTo(0);
+          }
+        }
+      }
+
+      function setVariant(variant) {
+        if (state.currentVariant === variant) return;
+        state.currentVariant = variant;
+        updateGainsForVariant(variant, true);
+        updateVariantButtonsUI();
+        drawWaveform();
+      }
+
+      function toggleVariant() {
+        setVariant(state.currentVariant === 'A' ? 'B' : 'A');
+      }
+
+      function loadTrack(index, autoPlay = false) {
+        if (index < 0 || index >= TRACKS.length) return;
+        state.currentTrackIndex = index;
+        const trk = TRACKS[index];
+        state.duration = trk.duration;
+        state.currentTime = 0;
+
+        document.getElementById('currentTrackTitle').textContent = trk.title;
+        document.getElementById('currentTrackArtist').textContent = `${trk.artist} • ${trk.version}`;
+        document.getElementById('trackGenreBadge').textContent = trk.genre.toUpperCase();
+        document.getElementById('trackBpmBadge').textContent = `${trk.bpm} BPM • ${trk.key.toUpperCase()}`;
+        document.getElementById('totalDurationDisplay').textContent = formatSeconds(trk.duration);
+
+        generateTrackWaveformPeaks(index);
+        updateTimeDisplays();
+        drawWaveform();
+        renderTracklist();
+
+        if (state.isPlaying || autoPlay) {
+          play();
+        } else {
+          pause();
+        }
+      }
+
+      // ------------------------------------------
+      // 5. WAVEFORM VISUALIZER (Canvas Engine)
+      // ------------------------------------------
+      const canvas = document.getElementById('waveformCanvas');
+      const container = document.getElementById('waveformContainer');
+      const hoverLine = document.getElementById('waveformHoverLine');
+      const hoverTooltip = document.getElementById('waveformHoverTooltip');
+
+      let trackPeaksMap = {};
+
+      function generateTrackWaveformPeaks(trackIndex) {
+        if (trackPeaksMap[trackIndex]) return trackPeaksMap[trackIndex];
+        const seed = (trackIndex + 1) * 31337;
+        const bars = 220;
+        const peaksA = [];
+        const peaksB = [];
+
+        let s = seed;
+        for (let i = 0; i < bars; i++) {
+          s = (s * 9301 + 49297) % 233280;
+          const rnd = s / 233280;
+          const progress = i / bars;
+          const chorus = Math.sin(progress * Math.PI) * 0.35 + 0.55;
+          const rawPeak = Math.max(0.12, (0.3 + 0.65 * rnd) * chorus);
+
+          const peakA = Math.min(1.0, rawPeak * 1.05 + 0.05);
+          const peakB = Math.min(1.0, rawPeak * (rnd > 0.8 ? 1.15 : 0.75));
+
+          peaksA.push(peakA);
+          peaksB.push(peakB);
+        }
+        trackPeaksMap[trackIndex] = { peaksA, peaksB };
+        return trackPeaksMap[trackIndex];
+      }
+
+      function resizeCanvas() {
+        if (!canvas || !container) return;
+        const rect = container.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        drawWaveform();
+      }
+
+      function drawWaveform() {
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+
+        const trackData = generateTrackWaveformPeaks(state.currentTrackIndex);
+        const isMaster = state.currentVariant === 'A';
+        const peaks = isMaster ? trackData.peaksA : trackData.peaksB;
+        const barsCount = peaks.length;
+
+        const barWidth = (w / barsCount) * 0.75;
+        const gap = (w / barsCount) * 0.25;
+        const centerY = h / 2;
+        const playbackProgress = state.duration > 0 ? state.currentTime / state.duration : 0;
+
+        for (let i = 0; i < barsCount; i++) {
+          const x = i * (barWidth + gap);
+          const barProgress = i / barsCount;
+          const isPlayed = barProgress <= playbackProgress;
+          const peak = peaks[i];
+          const barHeight = peak * (h * 0.88);
+
+          let fillStyle;
+          if (isMaster) {
+            if (isPlayed) {
+              const grad = ctx.createLinearGradient(0, centerY - barHeight / 2, 0, centerY + barHeight / 2);
+              grad.addColorStop(0, '#00f0ff');
+              grad.addColorStop(0.5, '#38bdf8');
+              grad.addColorStop(1, '#00f0ff');
+              fillStyle = grad;
+            } else {
+              fillStyle = '#263445';
+            }
+          } else {
+            if (isPlayed) {
+              const grad = ctx.createLinearGradient(0, centerY - barHeight / 2, 0, centerY + barHeight / 2);
+              grad.addColorStop(0, '#f59e0b');
+              grad.addColorStop(0.5, '#fbbf24');
+              grad.addColorStop(1, '#f59e0b');
+              fillStyle = grad;
+            } else {
+              fillStyle = '#372b20';
+            }
+          }
+
+          ctx.fillStyle = fillStyle;
+          const top = centerY - barHeight / 2;
+          ctx.beginPath();
+          ctx.roundRect(x, top, barWidth, barHeight, [2, 2, 2, 2]);
+          ctx.fill();
+        }
+
+        // Draw Playhead Cursor
+        const cursorX = playbackProgress * w;
+        ctx.strokeStyle = isMaster ? '#00f0ff' : '#f59e0b';
+        ctx.lineWidth = 2 * (window.devicePixelRatio || 1);
+        ctx.beginPath();
+        ctx.moveTo(cursorX, 0);
+        ctx.lineTo(cursorX, h);
+        ctx.stroke();
+
+        ctx.fillStyle = isMaster ? '#00f0ff' : '#f59e0b';
+        ctx.beginPath();
+        ctx.arc(cursorX, 6, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      let isDragging = false;
+
+      function handleWaveformSeek(e) {
+        const rect = container.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clickX = Math.max(0, Math.min(rect.width, clientX - rect.left));
+        const ratio = clickX / rect.width;
+        seekTo(ratio * state.duration);
+      }
+
+      container.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        handleWaveformSeek(e);
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        const rect = container.getBoundingClientRect();
+        const inBounds = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
+
+        if (inBounds) {
+          const posX = e.clientX - rect.left;
+          hoverLine.classList.remove('hidden');
+          hoverLine.style.left = `${posX}px`;
+          const timeAtPos = (posX / rect.width) * state.duration;
+          hoverTooltip.textContent = formatSeconds(timeAtPos);
+        } else {
+          hoverLine.classList.add('hidden');
+        }
+
+        if (isDragging) {
+          handleWaveformSeek(e);
+        }
+      });
+
+      window.addEventListener('mouseup', () => {
+        isDragging = false;
+      });
+
+      container.addEventListener('touchstart', (e) => {
+        isDragging = true;
+        handleWaveformSeek(e);
+      }, { passive: true });
+
+      container.addEventListener('touchmove', (e) => {
+        if (isDragging) {
+          handleWaveformSeek(e);
+        }
+      }, { passive: true });
+
+      container.addEventListener('touchend', () => {
+        isDragging = false;
+      });
+
+      // ------------------------------------------
+      // 6. ANIMATION FRAME & TIME UPDATES
+      // ------------------------------------------
+      let lastRenderTime = 0;
+      function startAnimationFrameLoop() {
+        if (animationFrameId) cancelAnimationFrame(animationFrameId);
+
+        function tick(timestamp) {
+          if (state.isPlaying && audioCtx) {
+            state.currentTime = audioCtx.currentTime - playbackStartTime;
+            if (state.currentTime >= state.duration) {
+              handleTrackEnd();
+            } else {
+              updateTimeDisplays();
+              if (timestamp - lastRenderTime > 50) {
+                lastRenderTime = timestamp;
+                drawWaveform();
+                updateVuMeters();
+              }
+            }
+          }
+          if (state.isPlaying) {
+            animationFrameId = requestAnimationFrame(tick);
+          }
+        }
+        animationFrameId = requestAnimationFrame(tick);
+      }
+
+      function updateTimeDisplays() {
+        const curEl = document.getElementById('currentTimeDisplay');
+        if (curEl) curEl.textContent = formatSeconds(state.currentTime);
+      }
+
+      function updateVuMeters() {
+        if (!analyserNode || !state.isPlaying) return;
+        const dataArray = new Uint8Array(analyserNode.frequencyBinCount);
+        analyserNode.getByteFrequencyData(dataArray);
+
+        let sumL = 0;
+        let sumR = 0;
+        const half = Math.floor(dataArray.length / 2);
+        for (let i = 0; i < half; i++) sumL += dataArray[i];
+        for (let i = half; i < dataArray.length; i++) sumR += dataArray[i];
+
+        const avgL = (sumL / half) / 255;
+        const avgR = (sumR / half) / 255;
+
+        const boost = state.currentVariant === 'A' ? 1.15 : 0.95;
+        const pctL = Math.min(100, Math.round(avgL * 100 * boost));
+        const pctR = Math.min(100, Math.round(avgR * 100 * boost));
+
+        const meterLEl = document.getElementById('meterL');
+        const meterREl = document.getElementById('meterR');
+        if (meterLEl) meterLEl.style.width = `${Math.max(12, pctL)}%`;
+        if (meterREl) meterREl.style.width = `${Math.max(10, pctR)}%`;
+      }
+
+      function formatSeconds(sec) {
+        if (isNaN(sec) || sec < 0) return '00:00';
+        const m = Math.floor(sec / 60);
+        const s = Math.floor(sec % 60);
+        return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+      }
+
+      // ------------------------------------------
+      // 7. UI SYNC & BUTTON BINDINGS
+      // ------------------------------------------
+      function updatePlayPauseUI() {
+        const iconPlay = document.getElementById('iconPlay');
+        const iconPause = document.getElementById('iconPause');
+        const playPauseText = document.getElementById('playPauseText');
+
+        if (state.isPlaying) {
+          iconPlay.classList.add('hidden');
+          iconPause.classList.remove('hidden');
+          playPauseText.textContent = 'Pause';
+        } else {
+          iconPlay.classList.remove('hidden');
+          iconPause.classList.add('hidden');
+          playPauseText.textContent = 'Play';
+        }
+      }
+
+      function updateVariantButtonsUI() {
+        const btnA = document.getElementById('btnVariantA');
+        const btnB = document.getElementById('btnVariantB');
+        const indA = document.getElementById('indicatorA');
+        const indB = document.getElementById('indicatorB');
+        const badge = document.getElementById('activeVariantBadge');
+        const lufs = document.getElementById('lufsDisplay');
+
+        if (state.currentVariant === 'A') {
+          btnA.className = 'group relative py-3.5 px-4 rounded-lg border-2 transition-all duration-150 flex items-center justify-between overflow-hidden bg-studio-850 border-accent-cyan knob-glow-cyan';
+          btnB.className = 'group relative py-3.5 px-4 rounded-lg border-2 transition-all duration-150 flex items-center justify-between overflow-hidden bg-studio-850 border-studio-750 hover:border-studio-600';
+          indA.className = 'w-3 h-3 rounded-full bg-accent-cyan led-cyan shrink-0';
+          indB.className = 'w-3 h-3 rounded-full bg-studio-600 shrink-0';
+
+          badge.className = 'px-2 py-0.5 rounded text-[10px] font-mono font-bold tracking-wider uppercase bg-accent-cyan/15 text-accent-cyan border border-accent-cyan/30';
+          badge.textContent = '[A] MIXED • MASTERED';
+          if (lufs) lufs.textContent = '-9.2 LUFS';
+        } else {
+          btnA.className = 'group relative py-3.5 px-4 rounded-lg border-2 transition-all duration-150 flex items-center justify-between overflow-hidden bg-studio-850 border-studio-750 hover:border-studio-600';
+          btnB.className = 'group relative py-3.5 px-4 rounded-lg border-2 transition-all duration-150 flex items-center justify-between overflow-hidden bg-studio-850 border-accent-amber knob-glow-amber';
+          indA.className = 'w-3 h-3 rounded-full bg-studio-600 shrink-0';
+          indB.className = 'w-3 h-3 rounded-full bg-accent-amber led-amber shrink-0';
+
+          badge.className = 'px-2 py-0.5 rounded text-[10px] font-mono font-bold tracking-wider uppercase bg-accent-amber/15 text-accent-amber border border-accent-amber/30';
+          badge.textContent = '[B] ROUGH • UNMASTERED';
+          if (lufs) lufs.textContent = '-13.8 LUFS';
+        }
+      }
+
+      function updateLoopUI() {
+        const btnLoop = document.getElementById('btnLoop');
+        const loopLed = document.getElementById('loopLed');
+        if (state.isLooping) {
+          loopLed.className = 'w-2 h-2 rounded-full bg-accent-emerald led-green';
+          btnLoop.classList.add('border-accent-emerald/60', 'text-white');
+        } else {
+          loopLed.className = 'w-2 h-2 rounded-full bg-studio-600';
+          btnLoop.classList.remove('border-accent-emerald/60', 'text-white');
+        }
+      }
+
+      // ------------------------------------------
+      // 8. TRACKLIST RENDERING (Clean Songs Table)
+      // ------------------------------------------
+      function renderTracklist() {
+        const container = document.getElementById('tracklistContainer');
+        if (!container) return;
+
+        const q = state.searchQuery.toLowerCase().trim();
+        const filtered = TRACKS.filter(t => 
+          !q || 
+          t.title.toLowerCase().includes(q) || 
+          t.genre.toLowerCase().includes(q) || 
+          t.artist.toLowerCase().includes(q) ||
+          t.bpm.toString().includes(q)
+        );
+
+        document.getElementById('trackCountBadge').textContent = `${filtered.length} of ${TRACKS.length} Tracks`;
+
+        if (filtered.length === 0) {
+          container.innerHTML = `
+            <div class="p-8 text-center text-studio-400 font-mono text-xs">
+              No matching reference tracks found for "${state.searchQuery}".
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = filtered.map((track) => {
+          const originalIndex = TRACKS.findIndex(t => t.id === track.id);
+          const isActive = originalIndex === state.currentTrackIndex;
+          const isPlaying = isActive && state.isPlaying;
+
+          return `
+            <div data-track-index="${originalIndex}" 
+                 class="track-row group cursor-pointer rounded-lg p-3 sm:px-4 sm:py-3 transition flex items-center justify-between border ${
+                   isActive 
+                     ? 'bg-studio-800/95 border-accent-cyan/50 shadow-md shadow-accent-cyan/5' 
+                     : 'bg-studio-900/60 border-studio-800 hover:bg-studio-850 hover:border-studio-700'
+                 }">
+              
+              <div class="flex items-center gap-3.5 min-w-0">
+                <div class="w-8 h-8 rounded-md bg-studio-950 border border-studio-800 flex items-center justify-center shrink-0">
+                  ${
+                    isActive
+                      ? `
+                        <div class="flex items-end gap-0.5 h-4 ${isPlaying ? '' : 'eq-paused'}">
+                          <span class="w-0.5 bg-accent-cyan rounded-full eq-bar-1"></span>
+                          <span class="w-0.5 bg-accent-cyan rounded-full eq-bar-2"></span>
+                          <span class="w-0.5 bg-accent-cyan rounded-full eq-bar-3"></span>
+                          <span class="w-0.5 bg-accent-cyan rounded-full eq-bar-4"></span>
+                        </div>
+                      `
+                      : `<span class="text-xs font-mono text-studio-400 group-hover:text-slate-200">${originalIndex + 1}</span>`
+                  }
+                </div>
+
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2">
+                    <h3 class="text-sm font-semibold truncate ${isActive ? 'text-white' : 'text-slate-300 group-hover:text-white'}">
+                      ${track.title}
+                    </h3>
+                    ${
+                      isActive 
+                        ? `<span class="px-1.5 py-0.2 rounded text-[9px] font-mono uppercase bg-accent-cyan/15 text-accent-cyan border border-accent-cyan/30">CURRENT</span>`
+                        : ''
+                    }
+                  </div>
+                  <div class="text-xs text-studio-400 truncate flex items-center gap-2">
+                    <span>${track.artist}</span>
+                    <span>•</span>
+                    <span class="text-studio-500">${track.version}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-4 text-xs font-mono shrink-0">
+                <span class="hidden md:inline-block px-2 py-0.5 rounded bg-studio-950 text-studio-400 border border-studio-800 text-[11px]">
+                  ${track.genre}
+                </span>
+
+                <span class="hidden sm:inline-block text-studio-400 text-[11px]">
+                  ${track.bpm} BPM • ${track.key}
+                </span>
+
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-300 font-medium">${formatSeconds(track.duration)}</span>
+                  <button type="button" class="w-7 h-7 rounded bg-studio-800 hover:bg-studio-700 border border-studio-700 flex items-center justify-center text-slate-200 transition">
+                    ${
+                      isPlaying
+                        ? `<svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`
+                        : `<svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`
+                    }
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          `;
+        }).join('');
+
+        container.querySelectorAll('.track-row').forEach(row => {
+          row.addEventListener('click', () => {
+            const idx = parseInt(row.getAttribute('data-track-index'), 10);
+            if (idx === state.currentTrackIndex) {
+              togglePlayPause();
+            } else {
+              loadTrack(idx, state.isPlaying);
+            }
+          });
+        });
+      }
+
+      // ------------------------------------------
+      // 9. EVENT LISTENERS & KEYBOARD SHORTCUTS
+      // ------------------------------------------
+      function setupListeners() {
+        document.getElementById('btnPlayPause').addEventListener('click', togglePlayPause);
+        document.getElementById('btnVariantA').addEventListener('click', () => setVariant('A'));
+        document.getElementById('btnVariantB').addEventListener('click', () => setVariant('B'));
+
+        document.getElementById('btnLoop').addEventListener('click', () => {
+          state.isLooping = !state.isLooping;
+          updateLoopUI();
+        });
+
+        document.getElementById('btnPrevSec').addEventListener('click', () => seekTo(state.currentTime - 5));
+        document.getElementById('btnNextSec').addEventListener('click', () => seekTo(state.currentTime + 5));
+
+        const volumeSlider = document.getElementById('volumeSlider');
+        const volumeDbText = document.getElementById('volumeDbText');
+        const btnMute = document.getElementById('btnMute');
+
+        volumeSlider.addEventListener('input', (e) => {
+          const val = parseFloat(e.target.value);
+          state.volume = val;
+          state.isMuted = false;
+          if (masterGainNode) masterGainNode.gain.value = val;
+          const db = val === 0 ? '-inf' : (20 * Math.log10(val)).toFixed(1);
+          volumeDbText.textContent = `${db} dB`;
+        });
+
+        btnMute.addEventListener('click', () => {
+          state.isMuted = !state.isMuted;
+          if (masterGainNode) {
+            masterGainNode.gain.value = state.isMuted ? 0 : state.volume;
+          }
+          volumeDbText.textContent = state.isMuted ? 'MUTED' : `${(20 * Math.log10(state.volume)).toFixed(1)} dB`;
+        });
+
+        const searchInput = document.getElementById('searchTrackInput');
+        searchInput.addEventListener('input', (e) => {
+          state.searchQuery = e.target.value;
+          renderTracklist();
+        });
+
+        // Keyboard Shortcuts: 'A', 'B', Space, 'L', 'M', Arrows
+        window.addEventListener('keydown', (e) => {
+          if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+
+          const key = e.key.toLowerCase();
+          if (key === 'a') {
+            e.preventDefault();
+            setVariant('A');
+          } else if (key === 'b') {
+            e.preventDefault();
+            setVariant('B');
+          } else if (e.code === 'Space') {
+            e.preventDefault();
+            togglePlayPause();
+          } else if (key === 'l') {
+            e.preventDefault();
+            state.isLooping = !state.isLooping;
+            updateLoopUI();
+          } else if (key === 'm') {
+            e.preventDefault();
+            document.getElementById('btnMute').click();
+          } else if (e.code === 'ArrowLeft') {
+            e.preventDefault();
+            seekTo(state.currentTime - 5);
+          } else if (e.code === 'ArrowRight') {
+            e.preventDefault();
+            seekTo(state.currentTime + 5);
+          }
+        });
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // Upload Custom Mix Modal
+        const uploadDialog = document.getElementById('uploadDialog');
+        document.getElementById('btnUploadModal').addEventListener('click', () => {
+          uploadDialog.showModal();
+        });
+        document.getElementById('btnCloseUploadModal').addEventListener('click', () => {
+          uploadDialog.close();
+        });
+        document.getElementById('btnCancelUpload').addEventListener('click', () => {
+          uploadDialog.close();
+        });
+
+        document.getElementById('btnSubmitCustomTrack').addEventListener('click', async () => {
+          const fileA = document.getElementById('fileInputA').files[0];
+          const fileB = document.getElementById('fileInputB').files[0];
+          const title = document.getElementById('customTrackTitle').value.trim() || 'Custom Client Stem';
+
+          if (!fileA && !fileB) {
+            alert('Please select at least one audio file (Track A or Track B).');
+            return;
+          }
+
+          const ctx = getAudioContext();
+          const newTrackId = 'custom-' + Date.now();
+
+          async function decode(file) {
+            if (!file) return null;
+            const buf = await file.arrayBuffer();
+            return await ctx.decodeAudioData(buf);
+          }
+
+          try {
+            const [bufferA, bufferB] = await Promise.all([decode(fileA), decode(fileB)]);
+            const duration = Math.round((bufferA || bufferB).duration);
+
+            state.userAudioBuffers[newTrackId] = { bufferA, bufferB };
+
+            TRACKS.unshift({
+              id: newTrackId,
+              title: title,
+              artist: 'Uploaded Audio File',
+              genre: 'User Stems',
+              bpm: 120,
+              key: 'Ref',
+              duration: duration,
+              date: 'Custom',
+              version: 'Client Mix Test',
+              notes: 'Custom audio file decoded in client browser memory.',
+            });
+
+            uploadDialog.close();
+            loadTrack(0, true);
+          } catch (err) {
+            console.error('Audio decode error:', err);
+            alert('Could not decode audio file: ' + err.message);
+          }
+        });
+      }
+
+      // ------------------------------------------
+      // 10. INITIALIZATION
+      // ------------------------------------------
+      function init() {
+        setupListeners();
+        updateVariantButtonsUI();
+        updateLoopUI();
+        renderTracklist();
+        resizeCanvas();
+        loadTrack(0, false);
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+
+    })();
+  </script>
+</body>
+</html>
