@@ -684,7 +684,7 @@
           const aOk = state.audioStatusA === 'ready';
           const bOk = state.audioStatusB === 'ready';
           if (aOk && bOk) {
-            statusRibbon.textContent = 'a.wav & b.wav ready';
+            statusRibbon.textContent = 'A/B ready';
             statusRibbon.className = 'px-2 py-0.5 rounded text-[10px] font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-800/60';
           } else if (state.audioStatusA === 'error' || state.audioStatusB === 'error') {
             statusRibbon.textContent = 'audio file missing';
