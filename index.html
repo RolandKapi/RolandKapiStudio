@@ -300,24 +300,12 @@
             </p>
           </div>
 
-          <!-- A/B ACTIVE VARIANT INDICATOR & LUFS MONITOR -->
+          <!-- A/B ACTIVE VARIANT INDICATOR -->
           <div class="flex items-center gap-3">
             <div class="text-right hidden sm:block">
               <div class="text-[10px] font-mono text-studio-400 uppercase">Selected Mode</div>
               <div id="activeVariantBadge" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold tracking-wider uppercase bg-accent-cyan/15 text-accent-cyan border border-accent-cyan/30">
                 [A] SAJÁT • MASTERED
-              </div>
-            </div>
-
-            <!-- Discrete Stereo Hardware Level Meters (L & R) -->
-            <div class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-studio-950 border border-studio-800 font-mono text-[10px]">
-              <span class="text-studio-500">L</span>
-              <div class="w-16 h-2 bg-studio-900 rounded-sm overflow-hidden flex">
-                <div id="meterL" class="h-full bg-gradient-to-r from-accent-emerald via-accent-cyan to-accent-ruby transition-all duration-75" style="width: 14%;"></div>
-              </div>
-              <span class="text-studio-500 ml-1">R</span>
-              <div class="w-16 h-2 bg-studio-900 rounded-sm overflow-hidden flex">
-                <div id="meterR" class="h-full bg-gradient-to-r from-accent-emerald via-accent-cyan to-accent-ruby transition-all duration-75" style="width: 12%;"></div>
               </div>
             </div>
           </div>
@@ -358,7 +346,7 @@
         <!-- PRECISION CONTROLS & STRICT A/B COMPARISON TOGGLE -->
         <div class="mt-6 grid grid-cols-1 gap-5">
         
-          <!-- Left: Transport Controls (Play, Loop, Seek) -->
+          <!-- Left: Transport Controls (Play, Seek, Volume) -->
           <div class="flex flex-wrap items-center gap-3">
             <!-- Play / Pause Main Trigger -->
             <button id="btnPlayPause" type="button" 
@@ -370,17 +358,6 @@
                 <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
               </span>
               <span id="playPauseText" class="tracking-wide text-sm">Play</span>
-            </button>
-
-            <!-- Loop Switch -->
-            <button id="btnLoop" type="button" 
-                    class="h-12 px-4 rounded-xl bg-studio-850 hover:bg-studio-800 border border-studio-750 text-studio-300 hover:text-white flex items-center gap-2 transition" 
-                    title="Toggle Repeat / Loop (Key: L)">
-              <span id="loopLed" class="w-2 h-2 rounded-full bg-studio-600"></span>
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-              </svg>
-              <span class="text-xs font-mono">Loop</span>
             </button>
 
             <!-- -5s / +5s Quick Nudge Buttons -->
@@ -465,7 +442,6 @@
             <span class="text-slate-300"><kbd class="px-1.5 py-0.5 bg-studio-850 rounded border border-studio-700 text-accent-cyan">A</kbd> Saját</span>
             <span class="text-slate-300"><kbd class="px-1.5 py-0.5 bg-studio-850 rounded border border-studio-700 text-accent-amber">B</kbd> Rough</span>
             <span class="text-slate-300"><kbd class="px-1.5 py-0.5 bg-studio-850 rounded border border-studio-700">Space</kbd> Play/Pause</span>
-            <span class="text-slate-300"><kbd class="px-1.5 py-0.5 bg-studio-850 rounded border border-studio-700">L</kbd> Loop</span>
             <span class="text-slate-300"><kbd class="px-1.5 py-0.5 bg-studio-850 rounded border border-studio-700">← / →</kbd> Seek 5s</span>
           </div>
           <div id="audioSourceIndicator" class="text-[10px] text-studio-500">
@@ -672,7 +648,6 @@
         currentTrackIndex: 0,
         currentVariant: 'A', // 'A' (Saját/Master) or 'B' (Rough)
         isPlaying: false,
-        isLooping: true,
         duration: 0,
         currentTime: 0,
         masterVolume: 0.9,
@@ -776,33 +751,71 @@
       }
 
       // ------------------------------------------
-      // 3. SYNCHRONIZED A/B SWITCHING & VOLUME FADE
+      // 3. SYNCHRONIZED A/B SWITCHING (volume fade + mute)
       // ------------------------------------------
-      function applyVariantVolumes(instant = false) {
-        const targetVolA = state.currentVariant === 'A' ? state.masterVolume : 0;
-        const targetVolB = state.currentVariant === 'B' ? state.masterVolume : 0;
+      // iOS (Safari AND Chrome, both use WebKit) ignores HTMLMediaElement.volume:
+      // it is always 1, so "volume = 0" does not silence the inactive track and
+      // A and B play at the same time. `muted` works everywhere, so the inactive
+      // track is always silenced with it. Where volume is settable (desktop,
+      // Android) the short volume micro-fade is kept to avoid clicks.
+      const VOLUME_SETTABLE = (() => {
+        try {
+          const probe = new Audio();
+          probe.volume = 0.5;
+          return probe.volume === 0.5;
+        } catch (e) {
+          return false;
+        }
+      })();
 
-        if (instant) {
+      let fadeTimer = null;
+
+      function applyVariantVolumes(instant = false) {
+        const aActive = state.currentVariant === 'A';
+        const targetVolA = aActive ? state.masterVolume : 0;
+        const targetVolB = aActive ? 0 : state.masterVolume;
+
+        if (fadeTimer) {
+          clearInterval(fadeTimer);
+          fadeTimer = null;
+        }
+
+        // iOS: switch only by muting the inactive element
+        if (!VOLUME_SETTABLE) {
+          audioA.muted = !aActive;
+          audioB.muted = aActive;
+          return;
+        }
+
+        const finish = () => {
           audioA.volume = targetVolA;
           audioB.volume = targetVolB;
+          audioA.muted = !aActive;
+          audioB.muted = aActive;
+        };
+
+        if (instant) {
+          finish();
           return;
         }
 
         // 20ms micro-fade to avoid speaker clicks
+        audioA.muted = false;
+        audioB.muted = false;
         const steps = 4;
         let step = 0;
         const startA = audioA.volume;
         const startB = audioB.volume;
 
-        const interval = setInterval(() => {
+        fadeTimer = setInterval(() => {
           step++;
           const progress = step / steps;
           audioA.volume = Math.max(0, Math.min(1, startA + (targetVolA - startA) * progress));
           audioB.volume = Math.max(0, Math.min(1, startB + (targetVolB - startB) * progress));
           if (step >= steps) {
-            clearInterval(interval);
-            audioA.volume = targetVolA;
-            audioB.volume = targetVolB;
+            clearInterval(fadeTimer);
+            fadeTimer = null;
+            finish();
           }
         }, 5);
       }
@@ -837,10 +850,6 @@
         }
 
         state.isPlaying = true;
-
-        // Apply loop setting
-        audioA.loop = state.isLooping;
-        audioB.loop = state.isLooping;
 
         // Sync positions
         audioB.currentTime = audioA.currentTime;
@@ -908,16 +917,12 @@
       }
 
       function handleTrackEnd() {
-        if (state.isLooping) {
-          seekTo(0);
-          play();
+        // Track finished: continue with the next one, stop after the last
+        if (state.currentTrackIndex + 1 < TRACKS.length) {
+          loadTrack(state.currentTrackIndex + 1, true);
         } else {
-          if (state.currentTrackIndex + 1 < TRACKS.length) {
-            loadTrack(state.currentTrackIndex + 1, true);
-          } else {
-            pause();
-            seekTo(0);
-          }
+          pause();
+          seekTo(0);
         }
       }
 
@@ -943,8 +948,6 @@
         // Point audio sources to real mp3 files
         audioA.src = trk.pathA;
         audioB.src = trk.pathB;
-        audioA.loop = state.isLooping;
-        audioB.loop = state.isLooping;
 
         generateTrackWaveformPeaks(index);
         updateTimeDisplays();
@@ -1334,7 +1337,7 @@
       });
 
       // ------------------------------------------
-      // 7. ANIMATION FRAME & METERS UPDATE
+      // 7. ANIMATION FRAME & TIME UPDATE
       // ------------------------------------------
       let animationFrameId = null;
       let lastRenderTime = 0;
@@ -1348,7 +1351,6 @@
             if (timestamp - lastRenderTime > 50) { // Throttled to ~20fps for optimal CPU usage
               lastRenderTime = timestamp;
               drawWaveform();
-              updateVuMeters();
             }
             animationFrameId = requestAnimationFrame(tick);
           }
@@ -1359,23 +1361,6 @@
       function updateTimeDisplays() {
         const curEl = document.getElementById('currentTimeDisplay');
         if (curEl) curEl.textContent = formatSeconds(state.currentTime);
-      }
-
-      function updateVuMeters() {
-        const meterLEl = document.getElementById('meterL');
-        const meterREl = document.getElementById('meterR');
-        if (!meterLEl || !meterREl) return;
-
-        if (state.isPlaying) {
-          const t = Date.now() / 140;
-          const rnd = Math.sin(t) * 0.22 + Math.cos(t * 1.7) * 0.18 + 0.6;
-          const base = state.currentVariant === 'A' ? 76 : 58;
-          meterLEl.style.width = `${Math.round(base * rnd)}%`;
-          meterREl.style.width = `${Math.round(base * (rnd * 0.94))}%`;
-        } else {
-          meterLEl.style.width = '12%';
-          meterREl.style.width = '10%';
-        }
       }
 
       function formatSeconds(sec) {
@@ -1430,21 +1415,6 @@
           badge.className = 'px-2 py-0.5 rounded text-[10px] font-mono font-bold tracking-wider uppercase bg-accent-amber/15 text-accent-amber border border-accent-amber/30';
           badge.textContent = '[B] ROUGH • UNMASTERED';
           if (waveformDot) waveformDot.className = 'w-2 h-2 rounded-full bg-accent-amber';
-        }
-      }
-
-      function updateLoopUI() {
-        const btnLoop = document.getElementById('btnLoop');
-        const loopLed = document.getElementById('loopLed');
-        audioA.loop = state.isLooping;
-        audioB.loop = state.isLooping;
-
-        if (state.isLooping) {
-          loopLed.className = 'w-2 h-2 rounded-full bg-accent-emerald led-green';
-          btnLoop.classList.add('border-accent-emerald/60', 'text-white');
-        } else {
-          loopLed.className = 'w-2 h-2 rounded-full bg-studio-600';
-          btnLoop.classList.remove('border-accent-emerald/60', 'text-white');
         }
       }
 
@@ -1594,11 +1564,6 @@
         document.getElementById('btnVariantA')?.addEventListener('click', () => setVariant('A'));
         document.getElementById('btnVariantB')?.addEventListener('click', () => setVariant('B'));
 
-        document.getElementById('btnLoop')?.addEventListener('click', () => {
-          state.isLooping = !state.isLooping;
-          updateLoopUI();
-        });
-
         document.getElementById('btnSeekBack')?.addEventListener('click', () => {
           seekTo(state.currentTime - 5);
         });
@@ -1705,10 +1670,6 @@
           } else if (e.code === 'Space') {
             e.preventDefault();
             togglePlayPause();
-          } else if (key === 'l') {
-            e.preventDefault();
-            state.isLooping = !state.isLooping;
-            updateLoopUI();
           } else if (e.key === 'ArrowLeft') {
             e.preventDefault();
             seekTo(state.currentTime - 5);
@@ -1738,8 +1699,13 @@
       function init() {
         setupEventListeners();
         updateVariantButtonsUI();
-        updateLoopUI();
         resizeCanvas();
+
+        // iOS cannot control volume from JS -> hide the (useless) slider there
+        if (!VOLUME_SETTABLE) {
+          const vs = document.getElementById('volumeSlider');
+          if (vs && vs.parentElement) vs.parentElement.style.display = 'none';
+        }
 
         // Start auto-discovery for repository folders (1, 2, 3...)
         autoDiscoverFolders();
