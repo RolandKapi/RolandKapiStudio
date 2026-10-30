@@ -289,7 +289,7 @@
                 FOLDER #0
               </span>
               <span id="trackFilesStatusBadge" class="px-2 py-0.5 rounded text-[10px] font-mono text-studio-300 bg-studio-950 border border-studio-800">
-                a.mp3 / b.mp3
+                a.wav / b.wav
               </span>
             </div>
             <h2 id="currentTrackTitle" class="text-xl sm:text-2xl font-bold text-white tracking-tight">
@@ -528,8 +528,8 @@
         </p>
 
         <ul class="list-disc list-inside space-y-1 text-studio-400 font-mono">
-          <li><strong class="text-accent-cyan">a.mp3</strong> — Your master / finished mix</li>
-          <li><strong class="text-accent-amber">b.mp3</strong> — Rough mix / raw multitrack comparison</li>
+          <li><strong class="text-accent-cyan">a.wav</strong> — Your master / finished mix</li>
+          <li><strong class="text-accent-amber">b.wav</strong> — Rough mix / raw multitrack comparison</li>
           <li><strong class="text-white">info.json</strong> — Track metadata template (below)</li>
         </ul>
 
@@ -540,9 +540,9 @@
   "genre": "Rock / Pop / Indie",
   "bpm": 120,
   "key": "A min",
-  "duration": "03:45",
+  "duration": "00:00",
   "date": "2026.10",
-  "version": "Roland K Master",
+  "version": "Master",
   "notes": "Mixing details, vocal chain, and mastering headroom notes."
 }</pre>
           <button id="btnCopyTemplate" type="button" class="absolute top-2 right-2 px-2.5 py-1 rounded bg-studio-800 hover:bg-studio-700 text-[10px] font-mono text-studio-200 border border-studio-600 transition">
@@ -550,9 +550,7 @@
           </button>
         </div>
 
-        <p class="text-[11px] text-studio-400">
-          Tip: You can also use plain text (<code class="text-studio-300">info.txt</code>) with simple lines: <code class="text-studio-300">artist: Name</code>, <code class="text-studio-300">title: Song</code>, <code class="text-studio-300">bpm: 120</code>.
-        </p>
+       
       </div>
 
       <div class="mt-5 pt-3 border-t border-studio-800 flex justify-end">
@@ -658,26 +656,26 @@
 
         if (badgeA) {
           if (state.audioStatusA === 'ready') {
-            badgeA.textContent = 'a.mp3 ✓';
+            badgeA.textContent = 'a.wav ✓';
             badgeA.className = 'text-[9px] font-mono text-accent-cyan mt-0.5';
           } else if (state.audioStatusA === 'error') {
-            badgeA.textContent = 'a.mp3 ✕';
+            badgeA.textContent = 'a.wav ✕';
             badgeA.className = 'text-[9px] font-mono text-accent-ruby mt-0.5';
           } else {
-            badgeA.textContent = 'a.mp3';
+            badgeA.textContent = 'a.wav';
             badgeA.className = 'text-[9px] font-mono text-studio-400 mt-0.5';
           }
         }
 
         if (badgeB) {
           if (state.audioStatusB === 'ready') {
-            badgeB.textContent = 'b.mp3 ✓';
+            badgeB.textContent = 'b.wav ✓';
             badgeB.className = 'text-[9px] font-mono text-accent-amber mt-0.5';
           } else if (state.audioStatusB === 'error') {
-            badgeB.textContent = 'b.mp3 ✕';
+            badgeB.textContent = 'b.wav ✕';
             badgeB.className = 'text-[9px] font-mono text-accent-ruby mt-0.5';
           } else {
-            badgeB.textContent = 'b.mp3';
+            badgeB.textContent = 'b.wav';
             badgeB.className = 'text-[9px] font-mono text-studio-400 mt-0.5';
           }
         }
@@ -686,7 +684,7 @@
           const aOk = state.audioStatusA === 'ready';
           const bOk = state.audioStatusB === 'ready';
           if (aOk && bOk) {
-            statusRibbon.textContent = 'a.mp3 & b.mp3 ready';
+            statusRibbon.textContent = 'a.wav & b.wav ready';
             statusRibbon.className = 'px-2 py-0.5 rounded text-[10px] font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-800/60';
           } else if (state.audioStatusA === 'error' || state.audioStatusB === 'error') {
             statusRibbon.textContent = 'audio file missing';
@@ -1059,7 +1057,7 @@
         if (!bufA) {
           state.pendingPlay = false;
           keepAliveStop();
-          setWaveformNotice('a.mp3 could not be loaded');
+          setWaveformNotice('a.wav could not be loaded');
           showNotice(`⚠️ Audio A (${trk.pathA}) could not be loaded. Please verify it is uploaded.`);
           updatePlayPauseUI();
           renderTracklist();
