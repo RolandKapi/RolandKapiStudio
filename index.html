@@ -878,7 +878,7 @@
 
         if (!bufA) {
           if (state.audioStatusA === 'error') {
-            showNotice(`⚠️ Audio A (${getCurrentTrack().pathA}) could not be loaded. Please verify it is uploaded.`);
+            showNotice(`⚠️ Audio A (${getCurrentTrack().pathA})  be loaded. Please verify it is uploaded.`);
             return;
           }
           // Still downloading/decoding: start automatically as soon as it is ready
@@ -1058,13 +1058,13 @@
           state.pendingPlay = false;
           keepAliveStop();
           setWaveformNotice('a.wav could not be loaded');
-          showNotice(`⚠️ Audio A (${trk.pathA}) could not be loaded. Please verify it is uploaded.`);
+          showNotice(`⚠️ Audio A could not be loaded. Please verify it is uploaded.`);
           updatePlayPauseUI();
           renderTracklist();
           return;
         }
         if (!bufB) {
-          showNotice(`⚠️ Audio B (${trk.pathB}) could not be loaded - B will be silent.`);
+          showNotice(`⚠️ Audio B could not be loaded - B will be silent.`);
         }
 
         // Use the real length of the decoded audio
