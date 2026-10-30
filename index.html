@@ -1216,21 +1216,20 @@
 
         if (discovered.length > 0) {
           TRACKS = discovered;
-          if (scanBadge) scanBadge.textContent = `${TRACKS.length} Folders Found`;
+          if (scanBadge) scanBadge.textContent = `${TRACKS.length} Songs Found`;
           if (scanLed) scanLed.className = 'w-2 h-2 rounded-full bg-accent-emerald led-green';
           if (countBadge) countBadge.textContent = `${TRACKS.length} Tracks Ready`;
           renderTracklist();
           loadTrack(0, false);
         } else {
-          // If no folders found, inform user cleanly
-          if (scanBadge) scanBadge.textContent = 'No folders found';
+          if (scanBadge) scanBadge.textContent = 'No songs found';
           if (scanLed) scanLed.className = 'w-2 h-2 rounded-full bg-accent-ruby';
           if (countBadge) countBadge.textContent = '0 Tracks Found';
 
           if (tracklistContainer) {
             tracklistContainer.innerHTML = `
               <div class="studio-inset p-8 rounded-xl text-center font-mono">
-                <div class="text-accent-amber text-lg font-bold mb-2">No Track Folders Found</div>
+                <div class="text-accent-amber text-lg font-bold mb-2">No Track Songs Found</div>
                 <p class="text-xs text-studio-400 max-w-md mx-auto mb-4">
                   The scanner looked for folders like <code class="text-accent-cyan">tracks/1/info.json</code> or <code class="text-accent-cyan">1/info.json</code>.
                   Make sure your GitHub repository has the numbered folders and info files uploaded.
