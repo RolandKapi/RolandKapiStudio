@@ -121,7 +121,6 @@
       </div>
 
       <div class="flex items-center gap-4">
-        <!-- Hotkey shortcuts indicator -->
         <div class="hidden sm:flex items-center gap-2 text-[11px] text-studio-400">
           <span>SHORTCUTS:</span>
           <kbd class="px-1.5 py-0.5 rounded bg-studio-800 border border-studio-700 text-slate-200">A</kbd>
@@ -133,7 +132,7 @@
         
         <div class="flex items-center gap-1.5 px-2 py-0.5 rounded bg-studio-950 border border-studio-800 text-[11px] text-accent-cyan">
           <span class="w-1.5 h-1.5 rounded-full bg-accent-cyan animate-pulse"></span>
-          <span>A/B SYNC LOCK: ON</span>
+          <span id="syncLockIndicator">A/B SYNC LOCK: ON</span>
         </div>
       </div>
     </div>
@@ -153,7 +152,6 @@
 
         <div>
           <div class="flex items-start gap-4 mb-4">
-            <!-- Avatar Frame -->
             <div class="relative shrink-0">
               <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-gradient-to-br from-studio-750 via-studio-800 to-studio-900 border border-studio-600/80 p-0.5 shadow-md flex items-center justify-center overflow-hidden">
                 <div class="w-full h-full rounded-[10px] bg-studio-900 flex flex-col items-center justify-center text-center relative group">
@@ -176,13 +174,13 @@
               <p class="text-xs text-studio-400 flex items-center gap-1.5 mt-0.5">
                 <span class="font-medium text-studio-300">RolandKapiStudio</span>
                 <span>•</span>
-                <span>Reference Deck</span>
+                <span>Reference Client Deck</span>
               </p>
             </div>
           </div>
 
           <div class="text-xs text-studio-300 leading-relaxed bg-studio-900/70 border border-studio-800/80 rounded-lg p-3 mb-4">
-            Compare the raw, unpolished mix against the final polished master in zero-latency real time. <br>Switch between <strong class="text-accent-cyan font-semibold">[A: Master]</strong> and <strong class="text-accent-amber font-semibold">[B: Rough]</strong> instantly without losing tempo or timing.
+            Compare the raw, unpolished mix against the final polished master in zero-latency real time. <br>Switch instantly between <strong class="text-accent-cyan font-semibold">[A: Master]</strong> and <strong class="text-accent-amber font-semibold">[B: Rough]</strong> without losing tempo or timing.
           </div>
 
           <!-- DIRECT CONTACT LINKS -->
@@ -259,17 +257,20 @@
                 [A] MIXED • MASTERED
               </span>
               <span id="trackGenreBadge" class="px-2 py-0.5 rounded text-[10px] font-mono text-studio-400 bg-studio-850 border border-studio-750">
-                SYNTHWAVE
+                INDIE
               </span>
               <span id="trackBpmBadge" class="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] font-mono text-studio-400 bg-studio-850 border border-studio-750">
-                120 BPM • F MIN
+                124 BPM • G MAJ
+              </span>
+              <span id="trackSourceBadge" class="px-1.5 py-0.5 rounded text-[9px] font-mono bg-studio-900 text-studio-400 border border-studio-800">
+                FOLDER #1
               </span>
             </div>
             <h2 id="currentTrackTitle" class="text-lg sm:text-xl font-bold tracking-tight text-white truncate">
-              Neon Horizon
+              Not Mine To Lose
             </h2>
             <p id="currentTrackArtist" class="text-xs text-studio-400 truncate">
-              Roland Kapi Studio Master • Version 3.2
+              Aly Navarro • Roland K unofficial mix
             </p>
           </div>
 
@@ -320,7 +321,7 @@
               </div>
 
               <div class="flex items-center gap-3 text-[11px]">
-                <span>SOURCE: 96kHz PCM</span>
+                <span id="audioModeLabel">SOURCE: a.mp3 / b.mp3</span>
                 <span class="text-studio-600">•</span>
                 <span class="text-accent-cyan font-medium">STEREO TRUE-PEAK</span>
               </div>
@@ -353,7 +354,7 @@
                     <span>A</span>
                     <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-accent-cyan/20 text-accent-cyan border border-accent-cyan/30">MASTER</span>
                   </div>
-                  <div class="text-[11px] text-studio-400">Mixed by Roland K</div>
+                  <div class="text-[11px] text-studio-400">Mixed by Roland K (a.mp3)</div>
                 </div>
               </div>
               <kbd class="hidden sm:inline-block px-2 py-1 rounded bg-studio-900 border border-studio-700 text-[10px] font-mono text-slate-300">
@@ -372,7 +373,7 @@
                     <span>B</span>
                     <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-studio-800 text-studio-400 border border-studio-700">RAW</span>
                   </div>
-                  <div class="text-[11px] text-studio-400">Recorded multitracks</div>
+                  <div class="text-[11px] text-studio-400">Recorded multitracks (b.mp3)</div>
                 </div>
               </div>
               <kbd class="hidden sm:inline-block px-2 py-1 rounded bg-studio-900 border border-studio-700 text-[10px] font-mono text-studio-400">
@@ -450,7 +451,7 @@
 
     </div>
 
-    <!-- SECTION 3: TRACKLIST -->
+    <!-- SECTION 3: TRACKLIST (Infinite & Auto-Discovered from GitHub Folders) -->
     <section class="studio-panel rounded-xl p-5 sm:p-6 shadow-xl" aria-label="Reference Tracklist">
       
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-studio-800">
@@ -460,17 +461,20 @@
               Studio Reference Master Catalog
             </h2>
             <span id="trackCountBadge" class="px-2 py-0.5 rounded text-[11px] font-mono text-accent-cyan bg-accent-cyan/10 border border-accent-cyan/30">
-              5 Tracks Available
+              Loading tracks...
+            </span>
+            <span id="scanStatusBadge" class="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] font-mono text-studio-400 bg-studio-900 border border-studio-800">
+              Auto-Discovery: Active
             </span>
           </div>
           <p class="text-xs text-studio-400 mt-0.5">
-            Select any song to load its dedicated A/B stems into the waveform monitor.
+            Auto-discovering numbered folders (<code class="text-studio-300">tracks/1/</code>, <code class="text-studio-300">tracks/2/</code>...) with <code class="text-studio-300">a.mp3</code>, <code class="text-studio-300">b.mp3</code> & <code class="text-studio-300">info.json</code>.
           </p>
         </div>
 
-        <!-- Search / Filter & Upload custom mix -->
+        <!-- Search / Filter & Sablon Guide -->
         <div class="flex items-center gap-2">
-          <div class="relative w-full sm:w-60">
+          <div class="relative w-full sm:w-56">
             <input id="searchTrackInput" type="text" placeholder="Filter by title, genre, BPM..." 
                    class="w-full bg-studio-900 border border-studio-750 text-xs rounded-lg pl-8 pr-3 py-2 text-slate-200 placeholder-studio-500 focus:outline-none focus:border-accent-cyan/60 transition">
             <svg class="w-3.5 h-3.5 text-studio-500 absolute left-2.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -478,13 +482,32 @@
             </svg>
           </div>
 
+          <!-- Sablon Template Info Button -->
+          <button id="btnOpenTemplateModal" type="button" title="View or copy the track info template for GitHub"
+                  class="px-3 py-2 rounded-lg bg-studio-850 hover:bg-studio-800 border border-studio-750 hover:border-accent-cyan/60 text-xs font-mono text-accent-cyan flex items-center gap-1.5 transition shrink-0">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            <span class="hidden md:inline">Sablon Info</span>
+            <span class="md:hidden">Sablon</span>
+          </button>
+
+          <!-- Rescan Folders Button -->
+          <button id="btnRescan" type="button" title="Rescan tracks/ folders on GitHub Pages"
+                  class="w-9 h-9 rounded-lg bg-studio-850 hover:bg-studio-800 border border-studio-750 text-studio-300 flex items-center justify-center transition shrink-0">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+          </button>
+
+          <!-- Upload Custom Mix (Client Testing) -->
           <button id="btnUploadModal" type="button" 
                   class="px-3 py-2 rounded-lg bg-studio-850 hover:bg-studio-800 border border-studio-750 hover:border-studio-600 text-xs font-mono text-slate-300 flex items-center gap-1.5 transition shrink-0">
-            <svg class="w-3.5 h-3.5 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-3.5 h-3.5 text-accent-emerald" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
             </svg>
-            <span class="hidden md:inline">Test Your Mix</span>
-            <span class="md:hidden">Upload</span>
+            <span class="hidden md:inline">Test Stems</span>
+            <span class="md:hidden">Test</span>
           </button>
         </div>
       </div>
@@ -499,6 +522,56 @@
     </section>
 
   </main>
+
+  <!-- SABLON INFO TEMPLATE MODAL -->
+  <dialog id="templateDialog" class="bg-transparent backdrop:bg-black/75 p-4 max-w-xl w-full">
+    <div class="studio-panel rounded-xl p-6 shadow-2xl border border-studio-700 text-slate-200">
+      <div class="flex items-center justify-between pb-3 border-b border-studio-800">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <svg class="w-4 h-4 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          GitHub Pages Sablon Info Fájl Útmutató
+        </h3>
+        <button id="btnCloseTemplateModal" type="button" class="text-studio-400 hover:text-white text-lg font-mono">✕</button>
+      </div>
+
+      <div class="text-xs text-studio-300 mt-3 space-y-2 leading-relaxed">
+        <p>
+          Ahhoz, hogy egy új dal automatikusan bekerüljön a listába, csak hozz létre egy új sorszámozott mappát a GitHub repódban (pl. <code class="text-accent-cyan bg-studio-900 px-1 py-0.5 rounded">tracks/6/</code>, <code class="text-accent-cyan bg-studio-900 px-1 py-0.5 rounded">tracks/7/</code>), és helyezd el benne ezt a 3 fájlt:
+        </p>
+        <ul class="list-disc pl-5 text-studio-400 space-y-1">
+          <li><code class="text-slate-200">a.mp3</code> — [A] Mastered / Mixed verzió</li>
+          <li><code class="text-slate-200">b.mp3</code> — [B] Rough / nyers mix verzió</li>
+          <li><code class="text-slate-200">info.json</code> — A dal adatai (sablon alább)</li>
+        </ul>
+      </div>
+
+      <div class="mt-4">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-[11px] font-mono text-studio-400 uppercase">Sablon info.json tartalom:</span>
+          <button id="btnCopyTemplate" type="button" class="text-[11px] font-mono text-accent-cyan hover:underline flex items-center gap-1">
+            <span>Másolás a vágólapra</span>
+          </button>
+        </div>
+        <pre id="templateCodeBlock" class="p-3.5 rounded-lg bg-studio-950 border border-studio-800 text-[11px] font-mono text-slate-300 overflow-x-auto select-all">{
+  "artist": "Aly Navarro",
+  "title": "Not Mine To Lose",
+  "genre": "Indie",
+  "bpm": 124,
+  "key": "G maj",
+  "duration": "03:24",
+  "date": "2026.09",
+  "version": "Roland K unofficial mix",
+  "notes": "Mixing and mastering notes..."
+}</pre>
+      </div>
+
+      <div class="mt-5 flex justify-end">
+        <button id="btnDoneTemplate" type="button" class="px-4 py-2 rounded-lg bg-accent-cyan text-studio-950 font-bold text-xs hover:bg-cyan-300 transition">Értem, bezárás</button>
+      </div>
+    </div>
+  </dialog>
 
   <!-- UPLOAD CUSTOM MIX MODAL -->
   <dialog id="uploadDialog" class="bg-transparent backdrop:bg-black/70 p-4 max-w-lg w-full">
@@ -550,6 +623,7 @@
       <div>
         © 2026 <strong class="text-slate-300">Roland Kapi Studio</strong> All rights reserved.
       </div>
+
     </div>
   </footer>
 
@@ -559,17 +633,19 @@
   <script>
     /**
      * Roland Kapi Studio - A/B Reference Engine
-     * Self-contained, zero-dependency client player with Web Audio API synthesis & synchronization
+     * Supports GitHub Pages Folder Auto-Discovery (tracks/{id}/info.json + a.mp3 + b.mp3)
+     * Infinite Expandable Tracklist with Real Dual Audio Sync & Procedural Fallback
      */
     (function () {
       'use strict';
 
       // ------------------------------------------
-      // 1. TRACKLIST DATABASE (Expandable JS Array)
+      // 1. DEFAULT TRACKS (Initial Baseline & Fallback)
       // ------------------------------------------
-      const TRACKS = [
+      let TRACKS = [
         {
-          id: 'trk-1',
+          id: 'folder-1',
+          folderId: '1',
           title: 'Not Mine To Lose',
           artist: 'Aly Navarro',
           genre: 'Indie',
@@ -578,12 +654,14 @@
           duration: 204, // 03:24
           date: '2026.09',
           version: 'Roland K unofficial mix',
-          notes: 'Typically we have songs with drums – drums are fun.  That said, sometimes mixing songs that don’t have that foundational groove can be a really fun challenge.  “Mine to lose” by Aly Navarro sounds huge despite not having a rhythm section.',
+          notes: 'Typically we have songs with drums – drums are fun. That said, sometimes mixing songs that don’t have that foundational groove can be a really fun challenge. “Mine to lose” by Aly Navarro sounds huge despite not having a rhythm section.',
+          pathA: 'tracks/1/a.mp3',
+          pathB: 'tracks/1/b.mp3',
           baseFrequency: 174.61, // F3
-          tempo: 124,
         },
         {
-          id: 'trk-2',
+          id: 'folder-2',
+          folderId: '2',
           title: 'Do Not Resuscitate',
           artist: 'Aly Navarro',
           genre: 'Indie Pop',
@@ -593,11 +671,13 @@
           date: '2026.09',
           version: 'Roland K unofficial mix',
           notes: 'Dreamy vocals, ambient steel, and warm acoustic drums – all backing up a really well written song!',
+          pathA: 'tracks/2/a.mp3',
+          pathB: 'tracks/2/b.mp3',
           baseFrequency: 138.59, // Db3
-          tempo: 130,
         },
         {
-          id: 'trk-3',
+          id: 'folder-3',
+          folderId: '3',
           title: 'What Kind A Girl Would I Be',
           artist: 'Roger Fournier feat. Tania Hancheroff',
           genre: 'Country Rock',
@@ -607,11 +687,13 @@
           date: '2026.08',
           version: 'Roland K unofficial mix',
           notes: 'BIG guitars, babbling banjos, and a commanding lead vocal make this song a super fun.',
+          pathA: 'tracks/3/a.mp3',
+          pathB: 'tracks/3/b.mp3',
           baseFrequency: 146.83, // D3
-          tempo: 94,
         },
         {
-          id: 'trk-4',
+          id: 'folder-4',
+          folderId: '4',
           title: 'Seven',
           artist: 'Eric Corriveau',
           genre: 'Indie Folk / Rock',
@@ -621,11 +703,13 @@
           date: '2026.08',
           version: 'Roland K unofficial mix',
           notes: '“Seven” has huge vintage swagger, blending John Meyer vibes with a sassy retro feel. The arrangement in this song is super slick and fits together so well!',
+          pathA: 'tracks/4/a.mp3',
+          pathB: 'tracks/4/b.mp3',
           baseFrequency: 196.00, // G3
-          tempo: 95,
         },
         {
-          id: 'trk-5',
+          id: 'folder-5',
+          folderId: '5',
           title: 'Blue Wild Yonder',
           artist: 'Passmore and Johnston',
           genre: 'Indie Folk / Rock',
@@ -634,51 +718,10 @@
           duration: 252, // 04:12
           date: '2026.07',
           version: 'Roland K unofficial mix',
-          notes: 'This one was primarily written by Andrew Johnston, who also sings it.  Hope you enjoy this breezy strummer!',
+          notes: 'This one was primarily written by Andrew Johnston, who also sings it. Hope you enjoy this breezy strummer!',
+          pathA: 'tracks/5/a.mp3',
+          pathB: 'tracks/5/b.mp3',
           baseFrequency: 196.00, // G3
-          tempo: 133,
-//        },
-//        {
-//          id: 'trk-6',
-//          title: 'That's All It Was',
-//          artist: 'Eric Corriveau',
-//          genre: 'Moody Pop Rock',
-//          bpm: 77,
-//          key: 'B maj',
-//          duration: 252, // 04:12
-//          date: '2026.07',
-//          version: 'Roland K unofficial mix',
-//          notes: 'We are back with another moody pop rock song courtesy of Eric //Corriveau!  This production is quite minimal but definitely has the potential //to sound huge.',
-//          baseFrequency: 196.00, // G3
-//          tempo: 77,
-//        },
-//        {
-//          id: 'trk-7',
-//          title: 'Butter',
-//          artist: 'Avrim Topel',
-//          genre: 'Pop Country',
-//          bpm: 95,
-//          key: 'G maj',
-//          duration: 252, // 04:12
-//          date: '2026.06',
-//          version: 'Roland K unofficial mix',
-//          notes: '“Butter” has a playful, groovy vibe and is backed up nicely //by driving drums, jangly guitars and hooky synths.',
-//          baseFrequency: 196.00, // G3
-//          tempo: 95,
-//        },
-//        {
-//          id: 'trk-8',
-//          title: 'The History',
-//          artist: 'Eric Corriveau',
-//          genre: 'Moody Pop Rock',
-//          bpm: 87.5,
-//          key: 'E maj',
-//          duration: 218, // 03:38
-//          date: '2026.05.',
-//          version: 'Roland K unofficial mix',
-//          notes: 'Killer groove, amazing lead vocal, and a jangly ethereal wall //of instruments make this tune a joy to mix!',
-//          baseFrequency: 220.00, // A3
-//          tempo: 87.5,
         }
       ];
 
@@ -687,7 +730,7 @@
       // ------------------------------------------
       const state = {
         currentTrackIndex: 0,
-        currentVariant: 'A', // 'A' = Mixed (Mastered), 'B' = Rough
+        currentVariant: 'A', // 'A' = Master / Mixed, 'B' = Rough
         isPlaying: false,
         currentTime: 0,
         duration: TRACKS[0].duration,
@@ -696,11 +739,18 @@
         isMuted: false,
         searchQuery: '',
         userAudioBuffers: {}, // For uploaded files
+        isUsingRealAudio: false,
+        isScanning: false,
       };
 
       // ------------------------------------------
-      // 3. WEB AUDIO API SYNCHRONIZED DSP ENGINE
+      // 3. AUDIO ENGINE (Dual HTML5 Audio + Web Audio Synth Fallback)
       // ------------------------------------------
+      const audioA = new Audio();
+      const audioB = new Audio();
+      audioA.preload = 'auto';
+      audioB.preload = 'auto';
+
       let audioCtx = null;
       let gainNodeA = null;
       let gainNodeB = null;
@@ -708,7 +758,6 @@
       let analyserNode = null;
       let synthSources = [];
       let playbackStartTime = 0;
-      let playbackOffset = 0;
       let animationFrameId = null;
 
       function getAudioContext() {
@@ -725,7 +774,6 @@
           gainNodeA = audioCtx.createGain();
           gainNodeB = audioCtx.createGain();
 
-          // Connect routing
           gainNodeA.connect(masterGainNode);
           gainNodeB.connect(masterGainNode);
           masterGainNode.connect(analyserNode);
@@ -739,13 +787,19 @@
         return audioCtx;
       }
 
-      /**
-       * Smooth micro-crossfade between Track A and Track B (click-free instant switch)
-       */
       function updateGainsForVariant(variant, smooth = true) {
+        const effectiveVol = state.isMuted ? 0 : state.volume;
+        if (variant === 'A') {
+          audioA.volume = effectiveVol;
+          audioB.volume = 0;
+        } else {
+          audioA.volume = 0;
+          audioB.volume = effectiveVol;
+        }
+
         if (!audioCtx || !gainNodeA || !gainNodeB) return;
         const now = audioCtx.currentTime;
-        const fadeTime = smooth ? 0.025 : 0.001; // 25ms crossfade
+        const fadeTime = smooth ? 0.025 : 0.001;
 
         if (variant === 'A') {
           gainNodeA.gain.cancelScheduledValues(now);
@@ -760,19 +814,43 @@
         }
       }
 
-      /**
-       * Procedural Multi-Layer Music Synthesizer for High-Fidelity Demo Tracks
-       * Generates dual synchronized stems (A = Mastered, B = Rough) with 0 network latency
-       */
+      function setupAudioElementListeners() {
+        audioA.addEventListener('timeupdate', () => {
+          if (state.isUsingRealAudio && state.isPlaying) {
+            state.currentTime = audioA.currentTime;
+            if (Math.abs(audioA.currentTime - audioB.currentTime) > 0.04) {
+              audioB.currentTime = audioA.currentTime;
+            }
+            updateTimeDisplays();
+          }
+        });
+
+        audioA.addEventListener('loadedmetadata', () => {
+          if (audioA.duration && !isNaN(audioA.duration) && audioA.duration > 0) {
+            state.duration = Math.round(audioA.duration);
+            document.getElementById('totalDurationDisplay').textContent = formatSeconds(state.duration);
+            drawWaveform();
+          }
+        });
+
+        audioA.addEventListener('ended', handleTrackEnd);
+
+        audioA.addEventListener('error', () => {
+          state.isUsingRealAudio = false;
+          document.getElementById('audioModeLabel').textContent = 'SOURCE: DSP SYNTH PREVIEW';
+          if (state.isPlaying) {
+            startSynthesizerPlayback();
+          }
+        });
+      }
+
       function startSynthesizerPlayback() {
         stopSynthesizerPlayback();
         const ctx = getAudioContext();
         const track = TRACKS[state.currentTrackIndex];
         const baseFreq = track.baseFrequency || 174.61;
         const bpm = track.bpm || 120;
-        const beatSec = 60 / bpm;
 
-        // Custom uploaded audio buffer playback if available
         if (state.userAudioBuffers[track.id]) {
           const custom = state.userAudioBuffers[track.id];
           const srcA = ctx.createBufferSource();
@@ -797,10 +875,6 @@
           return;
         }
 
-        // Stem A (Master): Rich harmonics, warm sub, stereo chorus lead, tight compression
-        // Stem B (Rough): Thinner bass, raw un-EQed lead, resonant highs, no stereo widening
-
-        // 1. Kick & Bassline Node
         const bassOsc = ctx.createOscillator();
         const bassGain = ctx.createGain();
         bassOsc.type = 'triangle';
@@ -823,7 +897,6 @@
         bassGain.connect(roughBassFilter);
         roughBassFilter.connect(gainNodeB);
 
-        // 2. Chords Pad
         const chordOsc1 = ctx.createOscillator();
         const chordOsc2 = ctx.createOscillator();
         const chordGain = ctx.createGain();
@@ -850,7 +923,6 @@
         chordGain.connect(roughChordFilter);
         roughChordFilter.connect(gainNodeB);
 
-        // 3. Melodic Lead Arpeggiator
         const leadOsc = ctx.createOscillator();
         const leadGain = ctx.createGain();
         leadOsc.type = 'sine';
@@ -884,11 +956,28 @@
       // 4. PLAYBACK CONTROLS & TIMERS
       // ------------------------------------------
       function play() {
-        const ctx = getAudioContext();
         state.isPlaying = true;
-        playbackStartTime = ctx.currentTime - state.currentTime;
 
-        startSynthesizerPlayback();
+        if (state.isUsingRealAudio && audioA.src) {
+          audioA.currentTime = state.currentTime;
+          audioB.currentTime = state.currentTime;
+          updateGainsForVariant(state.currentVariant, false);
+
+          const pA = audioA.play();
+          const pB = audioB.play();
+          if (pA !== undefined) {
+            pA.catch(() => {
+              state.isUsingRealAudio = false;
+              startSynthesizerPlayback();
+            });
+          }
+          if (pB !== undefined) pB.catch(() => {});
+        } else {
+          const ctx = getAudioContext();
+          playbackStartTime = ctx.currentTime - state.currentTime;
+          startSynthesizerPlayback();
+        }
+
         updatePlayPauseUI();
         startAnimationFrameLoop();
         renderTracklist();
@@ -900,7 +989,14 @@
           cancelAnimationFrame(animationFrameId);
           animationFrameId = null;
         }
-        stopSynthesizerPlayback();
+
+        if (state.isUsingRealAudio) {
+          audioA.pause();
+          audioB.pause();
+        } else {
+          stopSynthesizerPlayback();
+        }
+
         updatePlayPauseUI();
         renderTracklist();
       }
@@ -915,11 +1011,16 @@
 
       function seekTo(seconds) {
         state.currentTime = Math.max(0, Math.min(state.duration, seconds));
-        if (audioCtx) {
-          playbackStartTime = audioCtx.currentTime - state.currentTime;
-        }
-        if (state.isPlaying) {
-          startSynthesizerPlayback();
+        if (state.isUsingRealAudio) {
+          audioA.currentTime = state.currentTime;
+          audioB.currentTime = state.currentTime;
+        } else {
+          if (audioCtx) {
+            playbackStartTime = audioCtx.currentTime - state.currentTime;
+          }
+          if (state.isPlaying) {
+            startSynthesizerPlayback();
+          }
         }
         updateTimeDisplays();
         drawWaveform();
@@ -955,14 +1056,27 @@
         if (index < 0 || index >= TRACKS.length) return;
         state.currentTrackIndex = index;
         const trk = TRACKS[index];
-        state.duration = trk.duration;
+        state.duration = trk.duration || 204;
         state.currentTime = 0;
 
         document.getElementById('currentTrackTitle').textContent = trk.title;
         document.getElementById('currentTrackArtist').textContent = `${trk.artist} • ${trk.version}`;
         document.getElementById('trackGenreBadge').textContent = trk.genre.toUpperCase();
         document.getElementById('trackBpmBadge').textContent = `${trk.bpm} BPM • ${trk.key.toUpperCase()}`;
+        document.getElementById('trackSourceBadge').textContent = trk.folderId ? `FOLDER #${trk.folderId}` : 'CUSTOM';
         document.getElementById('totalDurationDisplay').textContent = formatSeconds(trk.duration);
+
+        if (trk.pathA && trk.pathB) {
+          audioA.src = trk.pathA;
+          audioB.src = trk.pathB;
+          audioA.loop = state.isLooping;
+          audioB.loop = state.isLooping;
+          state.isUsingRealAudio = true;
+          document.getElementById('audioModeLabel').textContent = `SOURCE: ${trk.pathA} (MP3)`;
+        } else {
+          state.isUsingRealAudio = false;
+          document.getElementById('audioModeLabel').textContent = 'SOURCE: DSP SYNTH PREVIEW';
+        }
 
         generateTrackWaveformPeaks(index);
         updateTimeDisplays();
@@ -977,7 +1091,144 @@
       }
 
       // ------------------------------------------
-      // 5. WAVEFORM VISUALIZER (Canvas Engine)
+      // 5. GITHUB PAGES FOLDER AUTO-DISCOVERY & SABLON PARSER
+      // ------------------------------------------
+      function parseDurationString(val) {
+        if (typeof val === 'number') return isNaN(val) ? 0 : Math.round(val);
+        if (!val) return 0;
+        const str = String(val).trim();
+        if (str.includes(':')) {
+          const parts = str.split(':');
+          const mins = parseInt(parts[0], 10) || 0;
+          const secs = parseInt(parts[1], 10) || 0;
+          return mins * 60 + secs;
+        }
+        const parsed = parseFloat(str);
+        return isNaN(parsed) ? 0 : Math.round(parsed);
+      }
+
+      function parseInfoFile(raw, folderId, basePath = 'tracks') {
+        const folderStr = String(folderId).trim();
+        let data = {};
+        const clean = raw.trim();
+
+        if (clean.startsWith('{')) {
+          try {
+            data = JSON.parse(clean);
+          } catch (e) {
+            data = {};
+          }
+        } else {
+          const lines = clean.split('\n');
+          for (const line of lines) {
+            const idx = line.indexOf(':');
+            if (idx > 0) {
+              const k = line.slice(0, idx).trim().toLowerCase();
+              const v = line.slice(idx + 1).trim();
+              data[k] = v;
+            }
+          }
+        }
+
+        const dur = parseDurationString(data.duration || data.length || 0);
+
+        return {
+          id: `folder-${folderStr}`,
+          folderId: folderStr,
+          title: data.title || `Track ${folderStr}`,
+          artist: data.artist || 'Roland Kapi',
+          genre: data.genre || 'Reference Master',
+          bpm: parseInt(data.bpm, 10) || 120,
+          key: data.key || 'Ref',
+          duration: dur > 0 ? dur : 204,
+          date: data.date || '2026',
+          version: data.version || 'Roland K Master',
+          notes: data.notes || '',
+          pathA: `${basePath}/${folderStr}/a.mp3`,
+          pathB: `${basePath}/${folderStr}/b.mp3`,
+          baseFrequency: 160 + (parseInt(folderStr, 10) || 1) * 12,
+        };
+      }
+
+      async function fetchTrackFromFolder(folderId) {
+        const basePath = 'tracks';
+        const candidatePaths = [
+          `${basePath}/${folderId}/info.json`,
+          `${basePath}/${folderId}/info.txt`,
+          `${folderId}/info.json`,
+          `${folderId}/info.txt`,
+        ];
+
+        for (const p of candidatePaths) {
+          try {
+            const res = await fetch(p);
+            if (res.ok) {
+              const text = await res.text();
+              const parsed = parseInfoFile(text, folderId, p.startsWith('tracks') ? 'tracks' : '.');
+              return parsed;
+            }
+          } catch (e) {}
+        }
+        return null;
+      }
+
+      async function autoDiscoverFolders() {
+        if (state.isScanning) return;
+        state.isScanning = true;
+        const countBadge = document.getElementById('trackCountBadge');
+        const statusBadge = document.getElementById('scanStatusBadge');
+        if (countBadge) countBadge.textContent = 'Scanning folders...';
+        if (statusBadge) statusBadge.textContent = 'Scanning...';
+
+        const discovered = [];
+
+        // 1. First check optional manifest.json
+        try {
+          const manifestRes = await fetch('tracks/manifest.json');
+          if (manifestRes.ok) {
+            const list = await manifestRes.json();
+            if (Array.isArray(list) && list.length > 0) {
+              for (const item of list) {
+                const fId = typeof item === 'object' ? (item.id || item.folder) : item;
+                const trk = await fetchTrackFromFolder(fId);
+                if (trk) discovered.push(trk);
+              }
+            }
+          }
+        } catch (e) {}
+
+        // 2. Infinite sequential auto-discovery scanner (1, 2, 3, 4, 5, 6, 7...)
+        if (discovered.length === 0) {
+          let folderIndex = 1;
+          let consecutiveMisses = 0;
+          const maxConsecutiveMisses = 2;
+
+          while (consecutiveMisses < maxConsecutiveMisses && folderIndex <= 200) {
+            const trk = await fetchTrackFromFolder(folderIndex);
+            if (trk) {
+              discovered.push(trk);
+              consecutiveMisses = 0;
+            } else {
+              consecutiveMisses++;
+            }
+            folderIndex++;
+          }
+        }
+
+        if (discovered.length > 0) {
+          TRACKS = discovered;
+        }
+
+        state.isScanning = false;
+        if (countBadge) countBadge.textContent = `${TRACKS.length} Tracks Available`;
+        if (statusBadge) statusBadge.textContent = `${TRACKS.length} Folders Found`;
+
+        renderTracklist();
+        loadTrack(0, false);
+      }
+
+      // ------------------------------------------
+      // 6. WAVEFORM VISUALIZER (Canvas Engine)
       // ------------------------------------------
       const canvas = document.getElementById('waveformCanvas');
       const container = document.getElementById('waveformContainer');
@@ -1076,7 +1327,6 @@
           ctx.fill();
         }
 
-        // Draw Playhead Cursor
         const cursorX = playbackProgress * w;
         ctx.strokeStyle = isMaster ? '#00f0ff' : '#f59e0b';
         ctx.lineWidth = 2 * (window.devicePixelRatio || 1);
@@ -1145,24 +1395,26 @@
       });
 
       // ------------------------------------------
-      // 6. ANIMATION FRAME & TIME UPDATES
+      // 7. ANIMATION FRAME & TIME UPDATES
       // ------------------------------------------
       let lastRenderTime = 0;
       function startAnimationFrameLoop() {
         if (animationFrameId) cancelAnimationFrame(animationFrameId);
 
         function tick(timestamp) {
-          if (state.isPlaying && audioCtx) {
-            state.currentTime = audioCtx.currentTime - playbackStartTime;
-            if (state.currentTime >= state.duration) {
-              handleTrackEnd();
-            } else {
-              updateTimeDisplays();
-              if (timestamp - lastRenderTime > 50) {
-                lastRenderTime = timestamp;
-                drawWaveform();
-                updateVuMeters();
+          if (state.isPlaying) {
+            if (!state.isUsingRealAudio && audioCtx) {
+              state.currentTime = audioCtx.currentTime - playbackStartTime;
+              if (state.currentTime >= state.duration) {
+                handleTrackEnd();
+                return;
               }
+            }
+            updateTimeDisplays();
+            if (timestamp - lastRenderTime > 50) {
+              lastRenderTime = timestamp;
+              drawWaveform();
+              updateVuMeters();
             }
           }
           if (state.isPlaying) {
@@ -1178,27 +1430,36 @@
       }
 
       function updateVuMeters() {
-        if (!analyserNode || !state.isPlaying) return;
-        const dataArray = new Uint8Array(analyserNode.frequencyBinCount);
-        analyserNode.getByteFrequencyData(dataArray);
-
-        let sumL = 0;
-        let sumR = 0;
-        const half = Math.floor(dataArray.length / 2);
-        for (let i = 0; i < half; i++) sumL += dataArray[i];
-        for (let i = half; i < dataArray.length; i++) sumR += dataArray[i];
-
-        const avgL = (sumL / half) / 255;
-        const avgR = (sumR / half) / 255;
-
-        const boost = state.currentVariant === 'A' ? 1.15 : 0.95;
-        const pctL = Math.min(100, Math.round(avgL * 100 * boost));
-        const pctR = Math.min(100, Math.round(avgR * 100 * boost));
-
         const meterLEl = document.getElementById('meterL');
         const meterREl = document.getElementById('meterR');
-        if (meterLEl) meterLEl.style.width = `${Math.max(12, pctL)}%`;
-        if (meterREl) meterREl.style.width = `${Math.max(10, pctR)}%`;
+        if (!meterLEl || !meterREl) return;
+
+        if (analyserNode && !state.isUsingRealAudio) {
+          const dataArray = new Uint8Array(analyserNode.frequencyBinCount);
+          analyserNode.getByteFrequencyData(dataArray);
+
+          let sumL = 0;
+          let sumR = 0;
+          const half = Math.floor(dataArray.length / 2);
+          for (let i = 0; i < half; i++) sumL += dataArray[i];
+          for (let i = half; i < dataArray.length; i++) sumR += dataArray[i];
+
+          const avgL = (sumL / half) / 255;
+          const avgR = (sumR / half) / 255;
+
+          const boost = state.currentVariant === 'A' ? 1.15 : 0.95;
+          const pctL = Math.min(100, Math.round(avgL * 100 * boost));
+          const pctR = Math.min(100, Math.round(avgR * 100 * boost));
+
+          meterLEl.style.width = `${Math.max(12, pctL)}%`;
+          meterREl.style.width = `${Math.max(10, pctR)}%`;
+        } else if (state.isPlaying) {
+          const t = Date.now() / 150;
+          const rnd = Math.sin(t) * 0.2 + Math.cos(t * 1.8) * 0.15 + 0.65;
+          const base = state.currentVariant === 'A' ? 78 : 62;
+          meterLEl.style.width = `${Math.round(base * rnd)}%`;
+          meterREl.style.width = `${Math.round(base * (rnd * 0.95))}%`;
+        }
       }
 
       function formatSeconds(sec) {
@@ -1209,7 +1470,7 @@
       }
 
       // ------------------------------------------
-      // 7. UI SYNC & BUTTON BINDINGS
+      // 8. UI SYNC & BUTTON BINDINGS
       // ------------------------------------------
       function updatePlayPauseUI() {
         const iconPlay = document.getElementById('iconPlay');
@@ -1259,6 +1520,9 @@
       function updateLoopUI() {
         const btnLoop = document.getElementById('btnLoop');
         const loopLed = document.getElementById('loopLed');
+        audioA.loop = state.isLooping;
+        audioB.loop = state.isLooping;
+
         if (state.isLooping) {
           loopLed.className = 'w-2 h-2 rounded-full bg-accent-emerald led-green';
           btnLoop.classList.add('border-accent-emerald/60', 'text-white');
@@ -1269,7 +1533,7 @@
       }
 
       // ------------------------------------------
-      // 8. TRACKLIST RENDERING (Clean Songs Table)
+      // 9. TRACKLIST RENDERING (Clean Songs Table)
       // ------------------------------------------
       function renderTracklist() {
         const container = document.getElementById('tracklistContainer');
@@ -1281,10 +1545,12 @@
           t.title.toLowerCase().includes(q) || 
           t.genre.toLowerCase().includes(q) || 
           t.artist.toLowerCase().includes(q) ||
-          t.bpm.toString().includes(q)
+          (t.bpm && t.bpm.toString().includes(q)) ||
+          (t.folderId && t.folderId.toLowerCase().includes(q))
         );
 
-        document.getElementById('trackCountBadge').textContent = `${filtered.length} of ${TRACKS.length} Tracks`;
+        const countBadge = document.getElementById('trackCountBadge');
+        if (countBadge) countBadge.textContent = `${filtered.length} of ${TRACKS.length} Tracks Available`;
 
         if (filtered.length === 0) {
           container.innerHTML = `
@@ -1320,7 +1586,7 @@
                           <span class="w-0.5 bg-accent-cyan rounded-full eq-bar-4"></span>
                         </div>
                       `
-                      : `<span class="text-xs font-mono text-studio-400 group-hover:text-slate-200">${originalIndex + 1}</span>`
+                      : `<span class="text-xs font-mono text-studio-400 group-hover:text-slate-200">${track.folderId || (originalIndex + 1)}</span>`
                   }
                 </div>
 
@@ -1338,7 +1604,8 @@
                   <div class="text-xs text-studio-400 truncate flex items-center gap-2">
                     <span>${track.artist}</span>
                     <span>•</span>
-                    <span class="text-studio-500">${track.version}</span>
+                    <span class="text-studio-500">${track.version || 'Roland K mix'}</span>
+                    ${track.date ? `<span class="text-studio-600">(${track.date})</span>` : ''}
                   </div>
                 </div>
               </div>
@@ -1381,7 +1648,7 @@
       }
 
       // ------------------------------------------
-      // 9. EVENT LISTENERS & KEYBOARD SHORTCUTS
+      // 10. EVENT LISTENERS & KEYBOARD SHORTCUTS
       // ------------------------------------------
       function setupListeners() {
         document.getElementById('btnPlayPause').addEventListener('click', togglePlayPause);
@@ -1404,6 +1671,7 @@
           const val = parseFloat(e.target.value);
           state.volume = val;
           state.isMuted = false;
+          updateGainsForVariant(state.currentVariant, false);
           if (masterGainNode) masterGainNode.gain.value = val;
           const db = val === 0 ? '-inf' : (20 * Math.log10(val)).toFixed(1);
           volumeDbText.textContent = `${db} dB`;
@@ -1411,6 +1679,7 @@
 
         btnMute.addEventListener('click', () => {
           state.isMuted = !state.isMuted;
+          updateGainsForVariant(state.currentVariant, false);
           if (masterGainNode) {
             masterGainNode.gain.value = state.isMuted ? 0 : state.volume;
           }
@@ -1421,6 +1690,32 @@
         searchInput.addEventListener('input', (e) => {
           state.searchQuery = e.target.value;
           renderTracklist();
+        });
+
+        document.getElementById('btnRescan').addEventListener('click', () => {
+          autoDiscoverFolders();
+        });
+
+        // Sablon Info Dialog Handlers
+        const templateDialog = document.getElementById('templateDialog');
+        document.getElementById('btnOpenTemplateModal').addEventListener('click', () => {
+          templateDialog.showModal();
+        });
+        document.getElementById('btnCloseTemplateModal').addEventListener('click', () => {
+          templateDialog.close();
+        });
+        document.getElementById('btnDoneTemplate').addEventListener('click', () => {
+          templateDialog.close();
+        });
+        document.getElementById('btnCopyTemplate').addEventListener('click', () => {
+          const code = document.getElementById('templateCodeBlock').textContent;
+          navigator.clipboard.writeText(code).then(() => {
+            const btn = document.getElementById('btnCopyTemplate');
+            btn.innerHTML = '<span class="text-accent-emerald">✓ Kimásolva!</span>';
+            setTimeout(() => {
+              btn.innerHTML = '<span>Másolás a vágólapra</span>';
+            }, 2000);
+          });
         });
 
         // Keyboard Shortcuts: 'A', 'B', Space, 'L', 'M', Arrows
@@ -1494,6 +1789,7 @@
 
             TRACKS.unshift({
               id: newTrackId,
+              folderId: 'custom',
               title: title,
               artist: 'Uploaded Audio File',
               genre: 'User Stems',
@@ -1515,15 +1811,17 @@
       }
 
       // ------------------------------------------
-      // 10. INITIALIZATION
+      // 11. INITIALIZATION
       // ------------------------------------------
       function init() {
+        setupAudioElementListeners();
         setupListeners();
         updateVariantButtonsUI();
         updateLoopUI();
         renderTracklist();
         resizeCanvas();
         loadTrack(0, false);
+        autoDiscoverFolders();
       }
 
       if (document.readyState === 'loading') {
