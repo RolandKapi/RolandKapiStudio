@@ -455,9 +455,6 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
             </svg>
             Reference Master Catalog
-            <span id="trackCountBadge" class="text-xs font-mono font-normal text-studio-400 bg-studio-950 px-2 py-0.5 rounded border border-studio-800">
-              Scanning folders...
-            </span>
           </h2>
          
         </div>
@@ -468,26 +465,12 @@
           <span id="scanIndicatorLed" class="w-2 h-2 rounded-full bg-accent-cyan led-cyan"></span>
           <span id="scanStatusBadge" class="text-studio-300">Ready</span>
         </div>
-          <div class="relative w-full sm:w-56">
-            <input id="searchInput" type="text" placeholder="Filter by title, artist, bpm..." 
-                   class="w-full bg-studio-950 border border-studio-750 rounded-lg px-3 py-1.5 text-xs text-slate-200 placeholder-studio-500 font-mono focus:outline-none focus:border-accent-cyan transition">
-            <svg class="w-3.5 h-3.5 text-studio-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-            </svg>
-          </div>
+          
           
           <button id="btnRescan" type="button" class="px-2.5 py-1.5 rounded-lg bg-studio-850 hover:bg-studio-800 border border-studio-750 text-xs font-mono text-studio-300 hover:text-white transition flex items-center gap-1.5" title="Rescan tracks/1, tracks/2... for new folders">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
           </svg>
-          <span class="hidden sm:inline">Rescan Folders</span>
-        </button>
-
-          <button id="btnOpenTemplateModal" type="button" class="px-2.5 py-1.5 rounded-lg bg-studio-850 hover:bg-studio-800 border border-studio-750 text-xs font-mono text-studio-300 hover:text-white transition flex items-center gap-1.5" title="View info.json / info.txt folder template format">
-          <svg class="w-3.5 h-3.5 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-          <span class="hidden sm:inline">Folder Template</span>
         </button>
 
           <button id="btnOpenLocalUpload" type="button" class="px-3 py-1.5 rounded-lg bg-studio-850 hover:bg-studio-800 border border-studio-700 text-xs font-mono text-studio-300 hover:text-white transition whitespace-nowrap" title="Audition your own stems locally">
@@ -501,7 +484,7 @@
         <!-- Rendered dynamically via JavaScript -->
         <div class="p-8 text-center text-studio-400 font-mono text-xs">
           <div class="inline-block w-4 h-4 border-2 border-accent-cyan border-t-transparent rounded-full animate-spin mr-2 align-middle"></div>
-          Scanning repository for track folders...
+          Scanning for track folders...
         </div>
       </div>
 
