@@ -445,7 +445,7 @@
             <span class="text-slate-300"><kbd class="px-1.5 py-0.5 bg-studio-850 rounded border border-studio-700">← / →</kbd> Seek 5s</span>
           </div>
           <div id="audioSourceIndicator" class="text-[10px] text-studio-500">
-            Source: Real HTML5 Audio Engine
+            Source: Web Audio engine (sample-locked A/B)
           </div>
         </div>
 
@@ -628,12 +628,12 @@
   </footer>
 
   <!-- ======================================================== -->
-  <!-- VANILLA JAVASCRIPT: TRUE DUAL HTML5 AUDIO ENGINE & SCANNER -->
+  <!-- VANILLA JAVASCRIPT: SAMPLE-LOCKED WEB AUDIO A/B ENGINE & SCANNER -->
   <!-- ======================================================== -->
   <script>
     /**
      * Roland Kapi Studio - Professional A/B Reference Engine
-     * Zero synthesizer noise / oscillators. Real HTML5 audio synchronization.
+     * Zero synthesizer noise / oscillators. Both mixes are decoded and played sample-locked via Web Audio.
      * Auto-discovers numbered repository folders (1, 2, 3...) on GitHub Pages.
      */
     (function () {
@@ -648,6 +648,7 @@
         currentTrackIndex: 0,
         currentVariant: 'A', // 'A' (Saját/Master) or 'B' (Rough)
         isPlaying: false,
+        pendingPlay: false, // play requested while the files are still loading
         duration: 0,
         currentTime: 0,
         masterVolume: 0.9,
@@ -656,48 +657,6 @@
         audioStatusA: 'idle', // 'idle' | 'loading' | 'ready' | 'error'
         audioStatusB: 'idle',
       };
-
-      // ------------------------------------------
-      // 2. DUAL HTML5 AUDIO OBJECTS (NO OSCILLATORS)
-      // ------------------------------------------
-      const audioA = new Audio();
-      const audioB = new Audio();
-      audioA.preload = 'auto';
-      audioB.preload = 'auto';
-
-      // Attach audio event handlers
-      audioA.addEventListener('canplay', () => {
-        state.audioStatusA = 'ready';
-        updateAudioBadges();
-      });
-      audioB.addEventListener('canplay', () => {
-        state.audioStatusB = 'ready';
-        updateAudioBadges();
-      });
-
-      audioA.addEventListener('error', () => {
-        state.audioStatusA = 'error';
-        updateAudioBadges();
-        showNotice(`⚠️ Audio A (${getCurrentTrack()?.pathA || 'a.mp3'}) could not be loaded. Please verify it is uploaded.`);
-      });
-      audioB.addEventListener('error', () => {
-        state.audioStatusB = 'error';
-        updateAudioBadges();
-      });
-
-      audioA.addEventListener('timeupdate', () => {
-        if (state.isPlaying) {
-          state.currentTime = audioA.currentTime;
-          if (audioA.duration && !isNaN(audioA.duration) && audioA.duration > 0) {
-            state.duration = audioA.duration;
-          }
-          updateTimeDisplays();
-        }
-      });
-
-      audioA.addEventListener('ended', () => {
-        handleTrackEnd();
-      });
 
       function getCurrentTrack() {
         return TRACKS[state.currentTrackIndex] || null;
@@ -751,87 +710,120 @@
       }
 
       // ------------------------------------------
-      // 3. SYNCHRONIZED A/B SWITCHING (volume fade + mute)
+      // 3. WEB AUDIO A/B ENGINE (sample-locked, works the same on iOS/Android/desktop)
       // ------------------------------------------
-      // iOS (Safari AND Chrome, both use WebKit) ignores HTMLMediaElement.volume:
-      // it is always 1, so "volume = 0" does not silence the inactive track and
-      // A and B play at the same time. `muted` works everywhere, so the inactive
-      // track is always silenced with it. Where volume is settable (desktop,
-      // Android) the short volume micro-fade is kept to avoid clicks.
-      const VOLUME_SETTABLE = (() => {
+      // Both mixes are downloaded and decoded into memory. Two AudioBufferSourceNodes
+      // are then started with the SAME start time on the SAME audio clock, so A and B
+      // can never drift apart. A/B switching only changes two gain nodes - there are
+      // no <audio> elements involved, so the iOS limitation (HTMLMediaElement.volume
+      // is read-only there) cannot cause both tracks to be heard at once.
+      let audioCtx = null;
+      let gainMaster = null;
+      let gainA = null;
+      let gainB = null;
+      let bufA = null;
+      let bufB = null;
+      let srcA = null;
+      let srcB = null;
+      let startCtxTime = 0; // audioCtx time at which the current run started
+      let startOffset = 0;  // track position (seconds) at that moment
+      let loadToken = 0;    // invalidates stale loads when the track changes
+
+      const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+      function ensureAudioContext() {
+        if (audioCtx) return audioCtx;
+        const Ctor = window.AudioContext || window.webkitAudioContext;
+        if (!Ctor) {
+          showNotice('This browser does not support the Web Audio API.', true);
+          return null;
+        }
+        audioCtx = new Ctor();
+        gainMaster = audioCtx.createGain();
+        gainA = audioCtx.createGain();
+        gainB = audioCtx.createGain();
+        gainA.connect(gainMaster);
+        gainB.connect(gainMaster);
+        gainMaster.connect(audioCtx.destination);
+        gainMaster.gain.value = state.masterVolume;
+        gainA.gain.value = state.currentVariant === 'A' ? 1 : 0;
+        gainB.gain.value = state.currentVariant === 'B' ? 1 : 0;
+
+        // iOS can suspend/"interrupt" the context (call, Siri, lock screen)
+        audioCtx.addEventListener('statechange', () => {
+          if (state.isPlaying && audioCtx.state !== 'running') pause();
+        });
+        return audioCtx;
+      }
+
+      // Must be called from inside a tap/click/key handler (iOS audio unlock)
+      function unlockAudio() {
+        const c = ensureAudioContext();
+        if (!c) return;
+        if (c.state !== 'running') c.resume().catch(() => {});
         try {
-          const probe = new Audio();
-          probe.volume = 0.5;
-          return probe.volume === 0.5;
-        } catch (e) {
-          return false;
-        }
-      })();
+          // iOS 16.4+: let Web Audio play even when the ring/silent switch is on silent
+          if (navigator.audioSession) navigator.audioSession.type = 'playback';
+        } catch (e) {}
+        try {
+          const s = c.createBufferSource();
+          s.buffer = c.createBuffer(1, 1, 22050);
+          s.connect(c.destination);
+          s.start(0);
+        } catch (e) {}
+      }
 
-      let fadeTimer = null;
-
-      function applyVariantVolumes(instant = false) {
-        const aActive = state.currentVariant === 'A';
-        const targetVolA = aActive ? state.masterVolume : 0;
-        const targetVolB = aActive ? 0 : state.masterVolume;
-
-        if (fadeTimer) {
-          clearInterval(fadeTimer);
-          fadeTimer = null;
-        }
-
-        // iOS: switch only by muting the inactive element
-        if (!VOLUME_SETTABLE) {
-          audioA.muted = !aActive;
-          audioB.muted = aActive;
-          return;
-        }
-
-        const finish = () => {
-          audioA.volume = targetVolA;
-          audioB.volume = targetVolB;
-          audioA.muted = !aActive;
-          audioB.muted = aActive;
-        };
-
-        if (instant) {
-          finish();
-          return;
-        }
-
-        // 20ms micro-fade to avoid speaker clicks
-        audioA.muted = false;
-        audioB.muted = false;
-        const steps = 4;
-        let step = 0;
-        const startA = audioA.volume;
-        const startB = audioB.volume;
-
-        fadeTimer = setInterval(() => {
-          step++;
-          const progress = step / steps;
-          audioA.volume = Math.max(0, Math.min(1, startA + (targetVolA - startA) * progress));
-          audioB.volume = Math.max(0, Math.min(1, startB + (targetVolB - startB) * progress));
-          if (step >= steps) {
-            clearInterval(fadeTimer);
-            fadeTimer = null;
-            finish();
+      // Older iOS versions mute Web Audio when the silent switch is on, unless a media
+      // element is playing. A looping, completely silent clip fixes that (iOS only).
+      let silentEl = null;
+      function makeSilentWavUrl() {
+        const rate = 8000;
+        const n = rate; // 1 second, 8-bit mono PCM
+        const buf = new ArrayBuffer(44 + n);
+        const v = new DataView(buf);
+        const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+        w(0, 'RIFF'); v.setUint32(4, 36 + n, true); w(8, 'WAVE'); w(12, 'fmt ');
+        v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+        v.setUint32(24, rate, true); v.setUint32(28, rate, true);
+        v.setUint16(32, 1, true); v.setUint16(34, 8, true);
+        w(36, 'data'); v.setUint32(40, n, true);
+        new Uint8Array(buf, 44).fill(128); // 128 = silence in 8-bit PCM
+        return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+      }
+      function keepAliveStart() {
+        if (!IS_IOS) return;
+        try {
+          if (!silentEl) {
+            silentEl = new Audio(makeSilentWavUrl());
+            silentEl.loop = true;
           }
-        }, 5);
+          const p = silentEl.play();
+          if (p && p.catch) p.catch(() => {});
+        } catch (e) {}
+      }
+      function keepAliveStop() {
+        try { if (silentEl) silentEl.pause(); } catch (e) {}
+      }
+
+      function applyVariantGains() {
+        if (!audioCtx) return;
+        const t = audioCtx.currentTime;
+        const aOn = state.currentVariant === 'A';
+        // ~15ms smoothing: instant to the ear, but no clicks
+        gainA.gain.setTargetAtTime(aOn ? 1 : 0, t, 0.004);
+        gainB.gain.setTargetAtTime(aOn ? 0 : 1, t, 0.004);
+      }
+
+      function applyMasterVolume() {
+        if (!audioCtx) return;
+        gainMaster.gain.setTargetAtTime(state.masterVolume, audioCtx.currentTime, 0.01);
       }
 
       function setVariant(v) {
         if (state.currentVariant === v) return;
         state.currentVariant = v;
-
-        // Keep audio synchronized
-        if (state.isPlaying) {
-          if (Math.abs(audioB.currentTime - audioA.currentTime) > 0.05) {
-            audioB.currentTime = audioA.currentTime;
-          }
-        }
-
-        applyVariantVolumes(false);
+        applyVariantGains();
         updateVariantButtonsUI();
         drawWaveform();
       }
@@ -841,63 +833,100 @@
       }
 
       // ------------------------------------------
-      // 4. PLAYBACK CONTROLS (REAL AUDIO ONLY)
+      // 4. PLAYBACK CONTROLS
       // ------------------------------------------
+      function getPosition() {
+        if (!state.isPlaying || !audioCtx) return state.currentTime;
+        const elapsed = Math.max(0, audioCtx.currentTime - startCtxTime);
+        return Math.min(state.duration || Infinity, startOffset + elapsed);
+      }
+
+      function stopSources() {
+        [srcA, srcB].forEach((s) => {
+          if (!s) return;
+          s.onended = null;
+          try { s.stop(); } catch (e) {}
+          try { s.disconnect(); } catch (e) {}
+        });
+        srcA = null;
+        srcB = null;
+      }
+
+      function startSources(offset) {
+        stopSources();
+        const when = audioCtx.currentTime + 0.03; // both sources share this exact start time
+        startCtxTime = when;
+        startOffset = offset;
+
+        if (bufA && offset < bufA.duration) {
+          const s = audioCtx.createBufferSource();
+          s.buffer = bufA;
+          s.connect(gainA);
+          s.onended = () => {
+            if (srcA === s && state.isPlaying) handleTrackEnd();
+          };
+          s.start(when, offset);
+          srcA = s;
+        } else {
+          setTimeout(() => { if (state.isPlaying) handleTrackEnd(); }, 0);
+        }
+
+        if (bufB && offset < bufB.duration) {
+          const s = audioCtx.createBufferSource();
+          s.buffer = bufB;
+          s.connect(gainB);
+          s.start(when, offset);
+          srcB = s;
+        }
+      }
+
       function play() {
         if (!getCurrentTrack()) {
           showNotice('No track selected or available to play.');
           return;
         }
+        if (!ensureAudioContext()) return;
+        unlockAudio();
+        keepAliveStart();
 
+        if (!bufA) {
+          if (state.audioStatusA === 'error') {
+            showNotice(`⚠️ Audio A (${getCurrentTrack().pathA}) could not be loaded. Please verify it is uploaded.`);
+            return;
+          }
+          // Still downloading/decoding: start automatically as soon as it is ready
+          state.pendingPlay = true;
+          updatePlayPauseUI();
+          renderTracklist();
+          return;
+        }
+
+        state.pendingPlay = false;
         state.isPlaying = true;
-
-        // Sync positions
-        audioB.currentTime = audioA.currentTime;
-
-        applyVariantVolumes(true);
-
-        const playPromiseA = audioA.play();
-        const playPromiseB = audioB.play();
-
-        if (playPromiseA !== undefined) {
-          playPromiseA.catch((err) => {
-            console.warn('Playback A failed:', err.message);
-            // Browser autoplay restrictions or missing file
-            if (err.name === 'NotAllowedError') {
-              showNotice('Click Play to allow browser audio playback.');
-            } else {
-              showNotice(`Cannot play a.mp3: ${err.message}. Check that tracks folder exists.`);
-            }
-            state.isPlaying = false;
-            updatePlayPauseUI();
-          });
-        }
-
-        if (playPromiseB !== undefined) {
-          playPromiseB.catch((err) => {
-            console.warn('Playback B background sync failed:', err.message);
-          });
-        }
-
+        startSources(state.currentTime >= state.duration - 0.05 ? 0 : state.currentTime);
         updatePlayPauseUI();
         startAnimationFrameLoop();
         renderTracklist();
       }
 
       function pause() {
+        if (state.isPlaying) state.currentTime = getPosition();
+        updateTimeDisplays();
+        drawWaveform();
         state.isPlaying = false;
+        state.pendingPlay = false;
+        stopSources();
+        keepAliveStop();
         if (animationFrameId) {
           cancelAnimationFrame(animationFrameId);
           animationFrameId = null;
         }
-        audioA.pause();
-        audioB.pause();
         updatePlayPauseUI();
         renderTracklist();
       }
 
       function togglePlayPause() {
-        if (state.isPlaying) {
+        if (state.isPlaying || state.pendingPlay) {
           pause();
         } else {
           play();
@@ -907,11 +936,9 @@
       function seekTo(seconds) {
         const trk = getCurrentTrack();
         const maxDur = state.duration || (trk ? trk.duration : 204);
-        state.currentTime = Math.max(0, Math.min(maxDur, seconds));
-
-        audioA.currentTime = state.currentTime;
-        audioB.currentTime = state.currentTime;
-
+        const pos = Math.max(0, Math.min(maxDur, seconds));
+        state.currentTime = pos;
+        if (state.isPlaying) startSources(pos);
         updateTimeDisplays();
         drawWaveform();
       }
@@ -926,11 +953,76 @@
         }
       }
 
-      function loadTrack(index, autoPlay = false) {
+      // ------------------------------------------
+      // 4b. LOADING & DECODING A/B FILES
+      // ------------------------------------------
+      async function fetchBytes(url) {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.arrayBuffer();
+      }
+
+      function decodeAudio(raw) {
+        return new Promise((resolve, reject) => {
+          // callback form works on every Safari; promise form on newer ones
+          const p = audioCtx.decodeAudioData(raw, resolve, reject);
+          if (p && p.catch) p.catch(reject);
+        });
+      }
+
+      function setWaveformNotice(text) {
+        const box = document.getElementById('waveformNotice');
+        const label = document.getElementById('waveformNoticeText');
+        if (!box || !label) return;
+        if (text) {
+          label.textContent = text;
+          box.classList.remove('hidden');
+        } else {
+          box.classList.add('hidden');
+        }
+      }
+
+      async function decodeVariant(rawPromise, which, token) {
+        const raw = await rawPromise;
+        if (token !== loadToken) return null;
+        try {
+          if (!raw) throw new Error('download failed');
+          const buf = await decodeAudio(raw);
+          if (token === loadToken) {
+            state['audioStatus' + which] = 'ready';
+            updateAudioBadges();
+          }
+          return buf;
+        } catch (e) {
+          console.warn(`Audio ${which} could not be loaded/decoded:`, e && e.message);
+          if (token === loadToken) {
+            state['audioStatus' + which] = 'error';
+            updateAudioBadges();
+          }
+          return null;
+        }
+      }
+
+      async function loadTrack(index, autoPlay = false) {
         if (index < 0 || index >= TRACKS.length) return;
+
+        const shouldPlay = state.isPlaying || state.pendingPlay || autoPlay;
+
+        // Stop whatever is running and drop the old buffers (frees memory on phones)
+        stopSources();
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId);
+          animationFrameId = null;
+        }
+        const token = ++loadToken;
+        bufA = null;
+        bufB = null;
+
         state.currentTrackIndex = index;
         const trk = TRACKS[index];
 
+        state.isPlaying = false;
+        state.pendingPlay = shouldPlay;
         state.duration = trk.duration || 204;
         state.currentTime = 0;
         state.audioStatusA = 'loading';
@@ -945,20 +1037,58 @@
         document.getElementById('trackSourceBadge').textContent = trk.folderId ? `FOLDER #${trk.folderId}` : 'CUSTOM';
         document.getElementById('totalDurationDisplay').textContent = formatSeconds(trk.duration);
 
-        // Point audio sources to real mp3 files
-        audioA.src = trk.pathA;
-        audioB.src = trk.pathB;
-
         generateTrackWaveformPeaks(index);
         updateTimeDisplays();
         drawWaveform();
+        updatePlayPauseUI();
+        renderTracklist();
+        setWaveformNotice('Loading audio…');
+
+        if (!ensureAudioContext()) {
+          state.pendingPlay = false;
+          updatePlayPauseUI();
+          return;
+        }
+        if (shouldPlay) {
+          unlockAudio(); // still inside the tap that selected the track
+          keepAliveStart();
+        } else {
+          keepAliveStop();
+        }
+
+        // Download both files in parallel, decode one after the other (lower peak memory)
+        const rawA = fetchBytes(trk.pathA).catch(() => null);
+        const rawB = fetchBytes(trk.pathB).catch(() => null);
+        const decodedA = await decodeVariant(rawA, 'A', token);
+        if (token !== loadToken) return;
+        const decodedB = await decodeVariant(rawB, 'B', token);
+        if (token !== loadToken) return;
+
+        bufA = decodedA;
+        bufB = decodedB;
+
+        if (!bufA) {
+          state.pendingPlay = false;
+          keepAliveStop();
+          setWaveformNotice('a.mp3 could not be loaded');
+          showNotice(`⚠️ Audio A (${trk.pathA}) could not be loaded. Please verify it is uploaded.`);
+          updatePlayPauseUI();
+          renderTracklist();
+          return;
+        }
+        if (!bufB) {
+          showNotice(`⚠️ Audio B (${trk.pathB}) could not be loaded - B will be silent.`);
+        }
+
+        // Use the real length of the decoded audio
+        state.duration = bufA.duration;
+        trk.duration = bufA.duration;
+        document.getElementById('totalDurationDisplay').textContent = formatSeconds(bufA.duration);
+        setWaveformNotice(null);
+        drawWaveform();
         renderTracklist();
 
-        if (state.isPlaying || autoPlay) {
-          play();
-        } else {
-          pause();
-        }
+        if (state.pendingPlay) play();
       }
 
       // ------------------------------------------
@@ -1347,6 +1477,7 @@
 
         function tick(timestamp) {
           if (state.isPlaying) {
+            state.currentTime = getPosition();
             updateTimeDisplays();
             if (timestamp - lastRenderTime > 50) { // Throttled to ~20fps for optimal CPU usage
               lastRenderTime = timestamp;
@@ -1378,7 +1509,7 @@
         const iconPause = document.getElementById('iconPause');
         const playPauseText = document.getElementById('playPauseText');
 
-        if (state.isPlaying) {
+        if (state.isPlaying || state.pendingPlay) {
           iconPlay.classList.add('hidden');
           iconPause.classList.remove('hidden');
           playPauseText.textContent = 'Pause';
@@ -1450,7 +1581,7 @@
         container.innerHTML = filtered.map((track) => {
           const originalIndex = TRACKS.findIndex(t => t.id === track.id);
           const isActive = originalIndex === state.currentTrackIndex;
-          const isPlaying = isActive && state.isPlaying;
+          const isPlaying = isActive && (state.isPlaying || state.pendingPlay);
 
           return `
             <div data-track-index="${originalIndex}" 
@@ -1574,7 +1705,7 @@
 
         document.getElementById('volumeSlider')?.addEventListener('input', (e) => {
           state.masterVolume = parseFloat(e.target.value);
-          applyVariantVolumes(true);
+          applyMasterVolume();
         });
 
         document.getElementById('searchInput')?.addEventListener('input', (e) => {
@@ -1701,11 +1832,15 @@
         updateVariantButtonsUI();
         resizeCanvas();
 
-        // iOS cannot control volume from JS -> hide the (useless) slider there
-        if (!VOLUME_SETTABLE) {
-          const vs = document.getElementById('volumeSlider');
-          if (vs && vs.parentElement) vs.parentElement.style.display = 'none';
-        }
+        // Web Audio must be unlocked by a user gesture (iOS/Safari/Chrome autoplay rules)
+        const unlockEvents = ['touchend', 'mousedown', 'click', 'keydown'];
+        const onFirstGesture = () => {
+          unlockAudio();
+          if (audioCtx && audioCtx.state === 'running') {
+            unlockEvents.forEach((ev) => window.removeEventListener(ev, onFirstGesture, true));
+          }
+        };
+        unlockEvents.forEach((ev) => window.addEventListener(ev, onFirstGesture, true));
 
         // Start auto-discovery for repository folders (1, 2, 3...)
         autoDiscoverFolders();
